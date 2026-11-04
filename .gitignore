@@ -1,0 +1,9 @@
+# OneDrive / OS cruft
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# MATLAB
+*.asv
+*.m~
+slprj/

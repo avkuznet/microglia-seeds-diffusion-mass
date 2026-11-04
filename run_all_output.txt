@@ -1,0 +1,237 @@
+===========================================================
+ P210  microglial carrier-diffusion model: run_all (quick)
+ 2026-11-01 18:38
+===========================================================
+
+--- fitted constants: six, one published target each ------
+  k_a        = 0.28219     surface elongation, 1/day
+  perPercent = 34.494      model units per 1% of 6E10+ area
+  m_seed     = 0.00046193  deposit mass per carrier release event
+  chi_s      = 0.083536    chemotactic sensitivity, mm^2/day per unit s
+  fnu_graft  = 0.27386     graft microglial carrying capacity
+  Q0les      = 107.54      acute lesion signal, 1/day
+
+--- NOT fitted: the aged uptake-competence proxy ----------
+  phiAged    = 0.494       EX VIVO PROXY, not fitted: the ratio of
+                          intracellular Abeta cluster burden in old
+                          against adult isolated microglia, ED Fig.
+                          4d.  Confocal counting after 24 h culture,
+                          not a measured uptake rate, so the aged
+                          graft load is conditional on it
+
+--- declared or measured inputs --------------------------
+  D_m   = 5.383    mm^2/day   Waters (2010), 62.3 um^2/s
+  lam_m = 8.467    1/day      Cirrito (2003), t_1/2 = 1.97 h
+  D_n   = 0.002246 mm^2/day   from graft arrival within 2 weeks
+  k_1   = 1e-08    units/day   homogeneous nucleation at m = 1: DECLARED,
+                              no tissue measurement exists.  The seeding
+                              bottleneck survives to k_1 ~ 6e-3 (see below)
+  k_2   = 0.5                 secondary nucleation on surface
+  k_d   = 0.03     1/day      lysosomal degradation of cargo
+  k_r   = 0.3      1/day      release of cargo
+  R_g   = 0.45     mm         graft radius
+  c_h   = 857      /mm^3     host deposit density, ED Fig. 6b (38.6/mm^2)
+  detR  = 10                 growth over the seed at which a deposit shows
+  kap   = 0.006908           DERIVED  area per unit c^(1/3) F^(2/3)
+  m_seed against its independent estimate b_max/n0_3D = 0.0009375: ratio 0.49
+
+--- transport length scales ------------------------------
+  ell_m, clean tissue              0.797 mm
+  ell_m, graft                     0.659 mm
+  ell_m, peri-graft host           0.406 mm
+  ell_x, carrier export length     0.299 mm
+  Lambda = ell_x / ell_m           0.453
+  carrier migration speed V        0.0907 mm/day (90.7 um/day)
+    directed V*tau 275 um  vs  random sqrt(2 Dn tau) 117 um  (tau 3.03 d)
+  mobility contrast D_n/D_m        0.000417
+
+--- the seeding bottleneck -------------------------------
+  graft load at 16 weeks, carriers active   2.3900 % area
+  graft load at 16 weeks, carriers inert    1.634e-11 % area
+  max deposit anywhere in graft, inert      1.137e-05 model units
+  largest inert deposit, in seed masses     0.2584
+  (a deposit shows at about                 10 seed masses)
+
+--- how far the bottleneck survives in k_1 ----------------
+  k_1 is DECLARED, not measured, so its margin is part of the result.
+  Each row raises it and reruns the inert arm.  A graft counts as
+  detectable above 0.05 % of area, and a deposit shows at 10 seed masses.
+       k_1      inert load %   largest inert   active load %
+                               (seed masses)
+    1.0e-08     1.634e-11           0.258       2.3900
+    1.0e-05     1.869e-08           0.272            -
+    1.0e-04     5.599e-07           0.418            -
+    1.0e-03     0.0005351            2.46       2.3919
+    3.0e-03       0.01653            6.53            -
+    6.0e-03       0.08321            11.9            -
+    1.0e-02        0.1717            18.2            -
+  inert deposition first clears the 0.05 % floor at k_1 = 6e-03, and first
+  reaches 10 seed masses at k_1 = 6e-03: 5.8 orders of magnitude above the
+  declared value.  The carriers-active load is unchanged across that range,
+  so the bottleneck says how slow homogeneous nucleation would have to be,
+  not that it cannot happen.
+
+--- host load does not depend on the carriers ------------
+  Grathwohl (2009): 95-97% ablation for 2-4 weeks, two APP lines, no
+  change in congophilic or total Abeta load, and no change in de novo
+  plaque formation when ablation precedes deposition.  Spangenberg
+  (2016): ~80% elimination for 28 days in 5xFAD, no change in plaque
+  load, number or size, nor in soluble or insoluble Abeta.
+  Olmos-Alonso (2016): CSF1R blockade for 3 months, amyloid unchanged.
+  d'Errico ED Fig. 6b: Irf8-/- host cortex 41.2 vs 38.6 plaques/mm^2.
+   carriers     host load     ratio     graft load     ratio
+     100%        1.861 %     1.000       0.5819 %     1.000
+      20%        1.943 %     1.044       0.2248 %     0.386
+      13%        1.950 %     1.048       0.1448 %     0.249
+       5%        1.958 %     1.052       0.0317 %     0.054
+  The host is indifferent to the carriers and the graft is not.  That
+  asymmetry is what the seeding bottleneck predicts: established
+  tissue grows on the surface it already has, naive tissue has none.
+
+--- mass budget across the graft boundary ----------------
+  carrier-borne import by 4 weeks        0.4777 units
+  diffusive monomer import, 4 weeks       200.5 units
+  carrier share of imported mass         0.2377 %
+  carrier-borne import by 16 weeks        2.002 units
+  diffusive import by 16 weeks            207.8 units
+  carrier share at 16 weeks              0.9539 %
+
+--- net effect of the carriers: active minus inert -------
+   weeks   graft change   host change   (percentage points of area)
+       4       +0.582        -0.102
+      16       +2.390        -0.310
+  [Fig. 7a shows the 4-week change, swept over the export length.]
+
+--- graft amyloid load, % of area ------------------------
+   weeks    base    Irf8-/-   BLZ945    aged    no carrier
+       2    0.230    0.009    0.009    0.014   2.12e-17
+       4    0.582    0.149    0.147    0.148   1.01e-15
+      16    2.390    1.034    1.030    4.918   1.63e-11
+  relative to baseline at 4 weeks: Irf8-/- 0.256, BLZ945 0.253, aged 0.254
+  measured (Source Data)         : Irf8-/- 0.244,  BLZ945 0.256,  aged 0.177
+  [BLZ945 is fitted via m_seed.  The Irf8-/- and aged load ratios
+   are PREDICTIONS: neither arm fits an amyloid parameter.  Irf8-/-
+   has its carrier density imposed at the measured 0.133 (Fig. 2g);
+   aged has the measured uptake 0.494 (ED Fig. 4d) and nothing else.]
+
+--- Cx3cr1-/-: selective loss of the deposit-surface route ---
+  Those recipients keep a normal graft microglial density and lose three
+  quarters of the amyloid, which no change in carrier NUMBER can produce.
+  The model already loads carriers by two routes, soluble (k_u) and deposit
+  surface (phi k_p).  Cx3cr1 mediates protofibril phagocytosis (Liu 2010),
+  so the genotype is the second route switched off; nothing is tuned.
+    graft microglia at 4 wk   model   518 of   518 (1.000)   measured 0.979
+    graft load at 4 wk        model 0.155 of 0.582 (0.267)   measured 0.273
+    phi is bounded, not merely set to zero: the largest value still inside
+    the measured 1 s.e.m. interval is phi = 0.060, so the data require the
+    fibrillar-uptake route reduced by at least 94%.
+
+--- can the carrier field be filled at an imaged somal speed? ---
+  Nimmerjahn (2005): 5% of somata shift 1-2 um/h.  The calibrated peak
+  drift is above that; this is what bringing it into range costs.
+   chi_s x   V (um/h)    nu 2wk    nu 4wk   load 4wk
+      1.00       3.78       749       518     0.5819
+      0.50       1.89       620       489     0.4744
+      0.25       0.94       529       469     0.4093
+      0.00       0.00       415       443     0.3382
+   measured                   751       517      0.586
+
+--- microglial density in the graft, cells/mm^2 ----------
+   2 weeks    749   4 weeks    518   16 weeks    445
+  measured (Source Data Fig. 1d): 2 weeks 751 +/- 84, 4 weeks 517 +/- 32
+  graft cell ratio at 4 weeks: Irf8-/- 0.136 (imposed, target 0.133), BLZ945 0.135 (measured 0.132)
+
+--- host tissue -------------------------------------------
+  free Abeta in host at 4 weeks       0.2011 of clean tissue
+  host amyloid load at 4 weeks        1.86 % area
+  graft-to-host load ratio at 4 weeks 0.313
+
+--- graft load against the published time course ---------
+  ED Fig. 1c is the only published 16-week graft load.  Its cohort sits
+  at 1.083% at 4 weeks, not the 0.586% of Fig. 2h the model is calibrated
+  to, so the within-cohort ratios are the meaningful comparison.
+    weeks     model     measured (ED Fig. 1c)      n
+        2     0.230     0.198 +/- 0.075 %         7
+        4     0.582     1.083 +/- 0.231 %        12
+       16     2.390     1.924 +/- 0.519 %        12
+
+  Ratios between time points remove the cohort offset.  These loads are
+  strongly right-skewed, so the ratio of means with Gaussian errors is
+  reported only for comparison; the log scale is the appropriate one and
+  the bootstrap assumes no distribution at all.  See p210_ratiostats.
+
+  16 wk / 4 wk   model 4.11
+    ratio of means    1.78 +/- 0.61 (Gaussian)      model is 3.8 sigma out
+    ratio of medians  1.52
+    log scale         x1.79, 95% CI x0.74 to x4.34    model is 1.8 sigma out
+      clustered       grafts/mice 12/8 and 12/9, design effect 1.50/1.33 at rho=1
+                      x1.79, 95% CI x0.63 to x5.11    model is 1.6 sigma out
+                      change itself t = 1.09 on 12 and 12 animals (not significant)
+    bootstrap         95% CI 0.91 to 3.41,  P(ratio >= model) = 0.0067
+
+  16 wk / 2 wk   model 10.41
+    ratio of means    9.74 +/- 4.55 (Gaussian)      model is 0.1 sigma out
+    ratio of medians  11.52
+    log scale         not available: a sample contains a zero
+    bootstrap         95% CI 4.40 to 29.62,  P(ratio >= model) = 0.4358
+
+  Every graft-level panel in d'Errico et al. is "one graft from n mice", so
+  all of these standard errors are clustered.  rho = 1 above assumes grafts
+  within a mouse are perfectly correlated, which BOUNDS the inflation rather
+  than estimating it; the conclusion is unchanged either way.  The published
+  ED Fig. 1c test, F(2,28), has 31 observations, so it is graft-level too.
+
+  The log scale is the one quoted in the paper.  On it the measured
+  4-to-16 week increase is not itself significant and its interval
+  contains the model value, so the apparent discrepancy in the ratio of
+  means is an artefact of assuming normality for a skewed quantity.
+
+--- onset of detectable deposit --------------------------
+  rim    1.00 weeks;   mid-graft 1.36 weeks;   centre 2.11 weeks
+  Irf8-/-: rim 2.37 weeks; deepest detected 0.446 mm of 0.45 mm
+
+--- laser lesion ------------------------------------------
+  microglia in window, 24 h / 0 h      1.81  (measured 1.82)  FITTED
+  amyloid in window, 6 h / 0 h         3.40  (measured 2.94 +/- 1.44)
+  amyloid in window, 24 h / 0 h        4.84  (measured 9.40 +/- 8.59)
+  Irf8-/- amyloid, 24 h / 0 h          1.76  (measured 6.45 +/- 6.24)
+  the 15.0-fold ratio of 24 h AREAS is not a test of the model: the two
+  genotypes did not start level.  Fig. 3c and 3d together imply 16.35 um^2
+  in Irf8+/+ at t = 0 against 1.58 in Irf8-/-, so 15.0 = 10.3 already there
+  x 1.46 contributed by delivery.  The model starts both level, so only
+  the second factor tests it:
+  ratio of 24 h INCREMENTS             2.75  (measured 1.46)
+
+--- grid convergence --------------------------------------
+  N =  160 :  4 weeks 0.5831 %   16 weeks 2.3911 %
+  N =  320 :  4 weeks 0.5819 %   16 weeks 2.3900 %
+  N =  640 :  4 weeks 0.5841 %   16 weeks 2.4017 %
+
+--- positivity --------------------------------------------
+  min nu = 0, min b = 0, min F = 0, min m = 0
+
+run_all finished in 26.1 s
+
+=== observation operator: deposit number in, or left out ===
+
+                             discrete mean field
+                           c^1/3 F^2/3          F
+perPercent (refitted)           34.56      48.58    measured 
+k_a (refitted), 1/day          0.2881     0.2762    measured 
+control graft load, %          0.5863     0.5863    measured 0.586, fitted in both
+host load at 4 wk, %            1.863       3.24    measured ~2 (Grathwohl 2009)
+Irf8-/- load ratio             0.2583      0.204    measured 0.244, predicted in both
+BLZ945 load ratio               0.256     0.2026    measured 0.256, fitted left / predicted right
+host load, 87% depleted         1.047       1.07    measured 1.07 (ED Fig. 6b)
+inert carriers, 16 wk %     1.701e-11          0    measured 0
+exponent gamma                  0.673     0.7886    measured 0.69
+
+The deposit number is what the depleted graft is short of.  Leaving
+it out of the readout makes the load respond to the carrier count far
+more steeply than it does, because the mass is then spread thin over a
+deposit population the operator assumes is still there, and the
+threshold cuts it twice.  Putting it in gives an exponent close to the
+measured one and leaves the seeding bottleneck intact, now for a
+physical reason rather than an assumed threshold: with inert carriers
+there are no centres for the amyloid to collect on, so what little
+forms is spread over specks too small to resolve.
