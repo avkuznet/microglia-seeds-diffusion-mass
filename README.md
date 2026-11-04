@@ -13,8 +13,9 @@ run_all             % print every number quoted in the paper          (~30 s)
 make_figures        % write Figs 1-8 and S1-S3 to ../figures           (~60 s)
 ```
 
-`run_all('quick')` skips calibration and uses the stored fit. The console log of a
-full run is saved as `run_all_output.txt`.
+`run_all('quick')` skips calibration and uses the stored fit in `p210_fitted.mat`.
+The console log saved as `run_all_output.txt` is from a quick run of that kind; its
+header records which it was.
 
 ## The model
 
