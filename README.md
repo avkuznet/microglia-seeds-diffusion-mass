@@ -58,7 +58,6 @@ spurious extrema at the migration front.
 | `p210_diag.m` | scratch diagnostic for the monomer balance |
 | `smoke.m` | smoke test: solves the baseline case on a coarse time grid and prints loads, densities, carrier fraction and field minima |
 | `p210_fitted.mat` | stored calibration |
-| `p210_results.mat` | stored outputs of `make_figures` |
 
 ## What is fitted and what is not
 
