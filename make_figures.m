@@ -227,7 +227,7 @@ bar(1:nb, mv./mv(1), 0.6, 'FaceColor',[.75 .80 .85]);
 errorbar(1:nb, dv./dv(1), de./dv(1), 'ko','MarkerFaceColor','k','MarkerSize',4,'LineStyle','none');
 set(gca,'XTick',1:nb,'XTickLabel',lab); xtickangle(20);
 ylabel('relative to Irf8^{+/-}'); ylim([0 1.3]);
-title('(d) the same, normalised');
+title('(d) the same, normalized');
 savefigs(f, outdir, 'fig5');
 
 % =====================================================================
