@@ -364,17 +364,23 @@ plot(0,                      0,                       'wp','MarkerFaceColor','w'
 plot(0,                      log10(Dd.irf8Nu.rel),    'wo','MarkerFaceColor','none','MarkerSize',8,'LineWidth',1.4);
 plot(0,                      log10(Dd.deplete.nuRel), 'ws','MarkerFaceColor','none','MarkerSize',8,'LineWidth',1.4);
 plot(log10(p0.phiAged),      log10(Dd.aged.nuRel),    'wd','MarkerFaceColor','none','MarkerSize',8,'LineWidth',1.4);
-xlabel('log_{10} (uptake per carrier / control)'); ylabel('log_{10} (\nu_0 / \nu_0^{ref})');
-title('(a) graft A\beta at 4 weeks (%)'); colorbar
-text(0,                 0.06,                        ' control',   'Color','w','FontSize',8);
-text(0,                 log10(Dd.irf8Nu.rel)+0.06,   ' Irf8^{-/-}','Color','w','FontSize',8);
-text(0,                 log10(Dd.deplete.nuRel)-0.13,' BLZ945',    'Color','w','FontSize',8);
-text(log10(p0.phiAged), log10(Dd.aged.nuRel)+0.06,   ' aged',      'Color','w','FontSize',8);
+xlabel('log_{10} (uptake per carrier / control)'); ylabel('log_{10} (carrier density / control)');
+title(['(a) graft A' char(946) ' at 4 weeks (%)']); colorbar
+% labels sit below or to the left of their markers so that none is clipped
+% by the right or upper edge of the plot (x and y end at 0.15 and 0.1)
+text(0,                 -0.07,                       'control',    'Color','w','FontSize',8, ...
+     'HorizontalAlignment','center','VerticalAlignment','top');
+text(-0.06,             log10(Dd.irf8Nu.rel)+0.07,   'Irf8^{-/-}', 'Color','w','FontSize',8, ...
+     'HorizontalAlignment','right');
+text(-0.06,             log10(Dd.deplete.nuRel)-0.07,'BLZ945',     'Color','w','FontSize',8, ...
+     'HorizontalAlignment','right');
+text(log10(p0.phiAged), log10(Dd.aged.nuRel)-0.07,   'aged',       'Color','w','FontSize',8, ...
+     'HorizontalAlignment','center','VerticalAlignment','top');
 
 subplot(1,2,2);
 contourf(log10(phg), log10(nug), Zc, 12, 'LineColor','none'); hold on
 plot(0, 0, 'wp','MarkerFaceColor','w','MarkerSize',11);
-xlabel('log_{10} (uptake per carrier / control)'); ylabel('log_{10} (\nu_0 / \nu_0^{ref})');
+xlabel('log_{10} (uptake per carrier / control)'); ylabel('log_{10} (carrier density / control)');
 title('(b) carrier-released fraction'); colorbar
 savefigs(f, outdir, 'fig8');
 
