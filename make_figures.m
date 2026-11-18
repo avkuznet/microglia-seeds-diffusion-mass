@@ -112,15 +112,19 @@ savefigs(f, outdir, 'fig2');
 % =====================================================================
 % Figure 3  space-time maps
 % =====================================================================
+% imagesc places the rows at equal intervals between the first and the last
+% time, so the maps need a run saved at equally spaced times.  TS is not
+% equally spaced and must not be used for them.
+solF = p210_solve(p210_params('baseline'), 0:0.5:112);
 f = newfig(17, 6);
 names = {'microglia  \nu','carrier cargo  b','deposited A\beta  F'};
-flds  = {solB.nu, solB.b, solB.F};
+flds  = {solF.nu, solF.b, solF.F};
 for k = 1:3
     subplot(1,3,k);
     Z = flds{k};
-    imagesc(G.rc, solB.t/7, Z); set(gca,'YDir','normal'); hold on
-    plot([p.Rg p.Rg], [0 max(solB.t)/7], 'w--', 'LineWidth',1.2);
-    tt = linspace(0, max(solB.t), 50);
+    imagesc(G.rc, solF.t/7, Z); set(gca,'YDir','normal'); hold on
+    plot([p.Rg p.Rg], [0 max(solF.t)/7], 'w--', 'LineWidth',1.2);
+    tt = linspace(0, max(solF.t), 50);
     plot(max(p.Rg - dB.Vmig*tt, 0), tt/7, 'w-', 'LineWidth',1.0);
     plot(max(p.Rg - R.ell_m_host, 0)*[1 1], [0 max(solB.t)/7], 'w:', 'LineWidth',1.0);
     xlim([0 1.2]); xlabel('r (mm)'); if k==1, ylabel('weeks'); end
@@ -256,7 +260,8 @@ j = find(TS==112);
 F0 = dB.areaPct(j, find(G.inGraft,1,'last'));
 plot(dd, F0*exp(-dd/R.ell_m_graft), 'k--');
 xlabel('depth into graft (mm)'); ylabel('deposit (% area)');
-legend({'2 wk','4 wk','8 wk','16 wk','exp(-x/{\itl}_m)'},'Box','off','FontSize',7.5);
+% char(8467) is the script-l symbol; an italic letter l reads as a capital I
+legend({'2 wk','4 wk','8 wk','16 wk',['exp(-x/{\it' char(8467) '}_m)']},'Box','off','FontSize',7.5);
 title('(a) amplitude is diffusion-set');
 
 subplot(1,3,2); hold on
