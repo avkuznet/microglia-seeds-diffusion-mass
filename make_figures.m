@@ -91,11 +91,11 @@ plot(mm, (p.k_a*mm + p.k_2*mm.^2)*S0, '-', 'Color',[.20 .45 .80]);
 need = p.detRatio * p.m_seed * p.c_h / 28;
 plot(mm, need*ones(size(mm)), 'k--');
 set(gca,'XScale','log','YScale','log'); xlim([1e-3 1]); ylim([1e-12 1e2]);
-xlabel('free A\beta, m (clean-tissue units)'); ylabel('initiation rate (units day^{-1})');
+xlabel('free A\beta, m (clean-tissue units)'); ylabel('rate of mass addition (units day^{-1})');
 legend({'homogeneous nucleation k_1m^2','carrier release (1-\rho)k_rb', ...
         'growth on a detectable seed','rate needed by 4 weeks'}, ...
         'Location','southeast','Box','off','FontSize',7.5);
-title('(a) routes to the first deposit');
+title('(a) initiation and seeded growth');
 
 subplot(1,2,2); hold on
 jm = find(G.inGraft, 1, 'first') + round(0.5*sum(G.inGraft));
@@ -178,7 +178,7 @@ errorbar(1:2, di, ei, 'ko','MarkerFaceColor','k','MarkerSize',4,'LineStyle','non
 set(gca,'XTick',1:2,'XTickLabel',{'Irf8^{+/+}','Irf8^{-/-}'});
 ylabel('A\beta in window at 24 h (x baseline)');
 ylim([0 20]);
-title('(c) 24-h increment  [PREDICTION]','FontSize',8.5);
+title('(c) fold change  [PREDICTION]','FontSize',8.5);
 text(0.55, 0.94, sprintf('ratio %.2f (model)', R.lesAbRatio), 'Units','normalized','FontSize',7.5);
 text(0.55, 0.87, sprintf('%.2f (measured)', D.lesAb.incRatio), 'Units','normalized','FontSize',7.5);
 savefigs(f, outdir, 'fig4');
@@ -386,7 +386,7 @@ subplot(1,2,2);
 contourf(log10(phg), log10(nug), Zc, 12, 'LineColor','none'); hold on
 plot(0, 0, 'wp','MarkerFaceColor','w','MarkerSize',11);
 xlabel('log_{10} (uptake per carrier / control)'); ylabel('log_{10} (carrier density / control)');
-title('(b) carrier-released fraction'); colorbar
+title('(b) released / deposited mass'); colorbar
 savefigs(f, outdir, 'fig8');
 
 % =====================================================================

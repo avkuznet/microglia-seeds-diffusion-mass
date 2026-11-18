@@ -9,7 +9,9 @@ function d = p210_post(sol)
 %     d.nuGraftVol mean graft microglial density, cells/mm^3
 %     d.seedCum    cumulative carrier-released amyloid in the graft
 %     d.graftTot   total graft amyloid (model units, volume integral)
-%     d.carrFrac   fraction of graft amyloid traceable to carrier release
+%     d.carrFrac   cumulative insoluble carrier release in the graft divided by
+%                  the deposited graft mass (a diagnostic ratio, not a
+%                  fraction of deposits or of their molecules)
 %     d.onsetT     onset time (days) at each radius; NaN where never detected
 %     d.depth      depth into the graft, Rg - r, for the onset curve
 %     d.ell_m      screening length profile at the final time, mm
