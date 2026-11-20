@@ -1,6 +1,6 @@
 # P210 — microglial carrier–diffusion model of Aβ propagation into naive tissue
 
-MATLAB implementation for *"Microglia deliver the seeds and diffusion delivers the mass:
+MATLAB implementation for *"Microglia deliver the seeds and diffusion delivers most of the mass:
 a transport model of amyloid-β propagation into naive brain tissue."*
 
 Base MATLAB only, no toolboxes; developed and run on R2026a. MIT licence.
