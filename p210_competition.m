@@ -28,7 +28,7 @@ function C = p210_competition()
 D  = p210_data();
 TS = [0 7 14 21 28];
 T16 = [0 7 14 28 112];
-NC = 240;
+NC = 400;                % the reference grid of p210_params
 TGT = D.irf8Load.val(1);
 
 modes = {'discrete','meanfield'};
@@ -43,13 +43,13 @@ for j = 1:2
     md = modes{j};
     % --- recalibrate this operator ---------------------------------------
     pp = 34.49;  ka = 0.282;
-    for outer = 1:4
+    for outer = 1:8
         ka = fitka(md, pp, NC, TS);
-        for it = 1:10
+        for it = 1:30
             L = loadOf('baseline', md, ka, pp, NC, TS);
             if L <= 0, break; end
             np = pp * (L / TGT)^0.75;
-            if abs(np-pp)/np < 1e-3, pp = np; break; end
+            if abs(np-pp)/np < 5e-5, pp = np; break; end
             pp = np;
         end
     end
@@ -124,9 +124,9 @@ f = @(k) deplOf(md, k, pp, NC, TS) - 0.80;
 lo = 1e-3; hi = 50; flo = f(lo); fhi = f(hi);
 if flo*fhi > 0, ka = 0.282; return; end
 ka = sqrt(lo*hi);
-for it = 1:22
+for it = 1:40
     ka = sqrt(lo*hi); fx = f(ka);
-    if abs(fx) < 3e-3, return; end
+    if abs(fx) < 1e-4, return; end
     if fx*flo > 0, lo = ka; flo = fx; else, hi = ka; end
 end
 end

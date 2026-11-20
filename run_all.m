@@ -107,10 +107,26 @@ for q = 1:numel(k1v)
     if isnan(k1Floor) && dn2.loadPct(i16) >= p.aThr,  k1Floor = k1v(q);  end
     if isnan(k1Show)  && mb2 >= p.detRatio,           k1Show  = k1v(q);  end
 end
-fprintf('  inert deposition first clears the %.2f %% floor at k_1 = %.0e, and first\n', ...
-        p.aThr, k1Floor);
-fprintf('  reaches %.0f seed masses at k_1 = %.0e: %.1f orders of magnitude above the\n', ...
-        p.detRatio, k1Show, log10(k1Show/p.k_1));
+%   The rows above are too far apart to say where the crossings are, so each
+%   is solved for by bisection between the last row below it and the first
+%   row above it.
+kx = [NaN NaN];
+for w = 1:2
+    if w == 1, kb = k1Floor; else, kb = k1Show; end
+    ka = k1v(find(k1v == kb) - 1);
+    for it = 1:14
+        km  = sqrt(ka*kb);
+        pn2 = p210_params('nocarrier');  pn2.k_1 = km;
+        sn2 = p210_solve(pn2, [0 TS(i16)]);  dn2 = p210_post(sn2);
+        mb2 = max(sn2.F(end,G.inGraft)) / max(max(sn2.c(end,G.inGraft)), realmin) / pn2.m_seed;
+        if (w == 1 && dn2.loadPct(end) >= p.aThr) || (w == 2 && mb2 >= p.detRatio), kb = km; else, ka = km; end
+    end
+    kx(w) = sqrt(ka*kb);
+end
+fprintf('  inert deposition clears the %.2f %% floor at k_1 = %.2g, and the largest\n', ...
+        p.aThr, kx(1));
+fprintf('  deposit reaches %.0f seed masses at k_1 = %.2g: %.1f orders of magnitude above the\n', ...
+        p.detRatio, kx(2), log10(kx(2)/p.k_1));
 fprintf('  declared value.  The carriers-active load is unchanged across that range,\n');
 fprintf('  so the bottleneck says how slow homogeneous nucleation would have to be,\n');
 fprintf('  not that it cannot happen.\n');
@@ -302,7 +318,7 @@ fprintf('  ratio of 24 h INCREMENTS             %.2f  (measured %.2f)\n', ...
     Lw.AbWinRel(end)/max(Lk.AbWinRel(end),eps), D.lesAb.incRatio);
 
 fprintf('\n--- grid convergence --------------------------------------\n');
-for N = [160 320 640]
+for N = [200 400 800]
     pk = p210_params('baseline'); pk.N = N;
     dk = p210_post(p210_solve(pk, [0 28 112]));
     fprintf('  N = %4d :  4 weeks %.4f %%   16 weeks %.4f %%\n', N, dk.loadPct(2), dk.loadPct(3));

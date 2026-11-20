@@ -124,10 +124,10 @@ cend = max(sol.c(end,:)', p.c_min);
 Send = Fend ./ (1 + (Fend ./ (cend * p.m_c)).^(1/3));
 d.ell_m = sqrt(p.D_m ./ (p.lam_m + p.k_a*Send + p.k_u*nuend));
 tau = 1/(p.k_d + p.k_r);
-% NOTE.  These two are read off whatever output times the caller asked for,
-% and the peak drift lives in the first few days, so a coarse tspan
-% underestimates both badly.  Use p210_scales for any reported value.
-d.Vmig = p.chi_s * max(max(abs(diff(sol.s,1,2)))) / G.dr;
+% The peak drift lives in the first few days, between the usual output
+% times, so it is taken from the solver's own steps (sol.dense), over the
+% whole run.  p210_scales reports the same quantity over the first 4 weeks.
+d.Vmig = p.chi_s * dn.gradsMax;
 d.ell_x = sqrt(2*p.D_n*tau + (d.Vmig*tau)^2);
 if Vg > 0
     d.Lambda = d.ell_x / mean(d.ell_m(gi));

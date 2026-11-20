@@ -82,9 +82,16 @@ function dn = densediag(S, p, G, t)
 %   dn.seedCum                     cumulative insoluble carrier release
 %                                  inside the graft, at times t
 %   dn.tt, dn.Fg, dn.cg            fine time grid; F and c in the graft cells
+%   dn.gradsMax                    largest gradient of the injury signal over
+%                                  space and over the solver's steps; the drift
+%                                  peaks in the first days, between output times
 N  = G.N;
 gi = find(G.inGraft);  gi = gi(:)';
-ib = find(G.rf >= p.Rg, 1, 'first');
+%   The boundary is the face between the last graft cell and the first host
+%   cell.  (The first face at or beyond r = Rg is that face only when Rg/dr
+%   is a whole number or rounds up; otherwise it lies one cell out in the
+%   host.)
+ib = numel(gi) + 1;
 ib = min(max(ib,2), N);
 
 tb = unique([S.x(:); t(:)]);
@@ -115,6 +122,9 @@ Ib = cum(qb);  Im = cum(qm);  Ir = cum(rel);
 dn.carrImport = Ib(loc);
 dn.diffImport = Im(loc);
 dn.seedCum    = Ir(loc);
+
+inT = S.x >= t(1) & S.x <= t(end);
+dn.gradsMax = max(max(abs(diff(S.y(4*N+1:5*N, inT), 1, 1)))) / G.dr;
 
 nf = min(max(ceil((t(end) - t(1)) / 0.02), 1), 20000);
 dn.tt = linspace(t(1), t(end), nf + 1)';

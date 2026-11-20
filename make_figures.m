@@ -241,7 +241,7 @@ fprintf('running depletion sweep ...\n');
 fr  = linspace(0, 0.95, 9);        % fraction of microglia removed
 Ldep = zeros(size(fr)); Hdep = zeros(size(fr));
 for k = 1:numel(fr)
-    pk = p210_params('baseline'); pk.N = 240; pk.nu0 = max(1-fr(k), 1e-3);
+    pk = p210_params('baseline'); pk.N = 250; pk.nu0 = max(1-fr(k), 1e-3);
     dk = p210_post(p210_solve(pk, [0 7 14 21 28]));
     Ldep(k) = dk.loadPct(end); Hdep(k) = dk.hostPct(end);
 end
@@ -288,10 +288,10 @@ savefigs(f, outdir, 'fig6');
 fprintf('running export-length and graft-size sweeps ...\n');
 krv = logspace(-3, 0, 9);
 Lam = zeros(size(krv)); dGraft = zeros(size(krv)); dHost = zeros(size(krv));
-pn = p210_params('nocarrier'); pn.N = 240;
+pn = p210_params('nocarrier'); pn.N = 250;
 dn0 = p210_post(p210_solve(pn, [0 28]));
 for k = 1:numel(krv)
-    pk = p210_params('baseline'); pk.N = 240; pk.k_r = krv(k);
+    pk = p210_params('baseline'); pk.N = 250; pk.k_r = krv(k);
     dk = p210_post(p210_solve(pk, [0 28]));
     Lam(k)    = dk.Lambda;
     dGraft(k) = dk.loadPct(end) - dn0.loadPct(end);
@@ -302,7 +302,7 @@ R.LamSweep = [Lam(:) dGraft(:) dHost(:)];
 Rgv = [0.15 0.25 0.35 0.45 0.60 0.80 1.10];
 Lrg = zeros(size(Rgv));
 for k = 1:numel(Rgv)
-    pk = p210_params('baseline'); pk.N = 240; pk.Rg = Rgv(k);
+    pk = p210_params('baseline'); pk.N = 250; pk.Rg = Rgv(k);
     dk = p210_post(p210_solve(pk, [0 28]));
     Lrg(k) = dk.loadPct(end);
 end
@@ -410,7 +410,7 @@ savefigs(f, outdir, 'figS1');
 % Supplementary S2  numerical verification
 % =====================================================================
 fprintf('running grid convergence ...\n');
-Ns = [160 320 640];  conv = zeros(numel(Ns),2);
+Ns = [200 400 800];  conv = zeros(numel(Ns),2);
 for k = 1:numel(Ns)
     pk = p210_params('baseline'); pk.N = Ns(k);
     dk = p210_post(p210_solve(pk, [0 28 112]));
@@ -420,7 +420,7 @@ R.conv = [Ns(:) conv];
 f = newfig(17, 6.5);
 subplot(1,2,1); hold on
 plot(Ns, conv(:,1)/conv(end,1), 'o-'); plot(Ns, conv(:,2)/conv(end,2), 's-');
-xlabel('grid points N'); ylabel('graft load, relative to N = 640');
+xlabel('grid points N'); ylabel('graft load, relative to N = 800');
 legend({'4 weeks','16 weeks'},'Box','off','FontSize',7.5);
 title('(a) grid convergence');
 subplot(1,2,2); hold on

@@ -28,7 +28,12 @@ p.variant = lower(variant);
 p.geom = 2;            % 0 planar, 1 cylindrical, 2 spherical
 p.Rg   = 0.45;         % graft radius, mm
 p.Rout = 2.50;         % outer radius of the simulated host shell, mm
-p.N    = 320;          % finite-volume cells
+p.N    = 400;          % finite-volume cells.  The graft is the set of cells
+                       % whose centres lie inside Rg, so its boundary is a
+                       % cell face; with Rout/N = 6.25 um that face is at
+                       % Rg = 0.45 mm exactly (any N that is a multiple of
+                       % 50 does this).  On other grids the boundary moves
+                       % to the nearest face, up to half a cell away.
 
 % ---- free amyloid-beta --------------------------------------------------
 p.D_m   = 5.383;       % mm^2/day  (62.3 um^2/s, Waters 2010)

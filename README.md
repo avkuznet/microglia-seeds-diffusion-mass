@@ -62,6 +62,12 @@ spurious extrema at the migration front.
 
 ## What is fitted and what is not
 
+The reference grid has 400 cells, which puts a cell face exactly at the graft boundary
+(r = 0.45 mm), and the calibration runs on that same grid. Up to v1.0.7 the reference grid
+had 320 cells and the calibration 240; the boundary then sat on the nearest face, up to
+5 µm from 0.45 mm, and the fitted targets were met only to about 1%. They are now met to
+the printed precision. All results moved by less than 1%.
+
 Six constants, one target each. Five are taken from the **Source Data** files published
 with d'Errico et al. (2022) rather than digitised from the printed figures; the sixth,
 `k_a`, is fitted to independent interstitial-Aβ depletion measurements.
@@ -70,12 +76,12 @@ other comparison in the paper is a prediction.
 
 | constant | value | fitted to |
 |---|---|---|
-| `k_a` | 0.2822 day⁻¹ | host interstitial Aβ depleted 80% at 4 weeks |
-| `perPercent` | 34.49 units per 1% area | graft load 0.586% at 4 weeks — a unit conversion only |
-| `chi_s` | 0.0835 mm² day⁻¹ per unit s | graft microglia 751 mm⁻² at 2 weeks (Fig. 1d) |
-| `fnu_graft` | 0.274 | graft microglia 517 mm⁻² at 4 weeks (Fig. 1d) |
-| `m_seed` | 4.62 × 10⁻⁴ units per deposit | BLZ945 load is 0.256 of vehicle (ED Fig. 7f,g) |
-| `Q0les` | 107.5 day⁻¹ | microglia at a laser lesion rise 1.82-fold in 24 h (Fig. 3e) |
+| `k_a` | 0.2845 day⁻¹ | host interstitial Aβ depleted 80% at 4 weeks |
+| `perPercent` | 34.76 units per 1% area | graft load 0.586% at 4 weeks — a unit conversion only |
+| `chi_s` | 0.0855 mm² day⁻¹ per unit s | graft microglia 751 mm⁻² at 2 weeks (Fig. 1d) |
+| `fnu_graft` | 0.271 | graft microglia 517 mm⁻² at 4 weeks (Fig. 1d) |
+| `m_seed` | 4.65 × 10⁻⁴ units per deposit | BLZ945 load is 0.256 of vehicle (ED Fig. 7f,g) |
+| `Q0les` | 107.1 day⁻¹ | microglia at a laser lesion rise 1.82-fold in 24 h (Fig. 3e) |
 
 `chi_s` and `fnu_graft` fix the microglial field, which is an input to the amyloid
 problem rather than a result of it.
@@ -95,7 +101,7 @@ no longer require it.
 `m_seed` has an independent estimate it was not fitted to. A loaded microglial cell
 carries about one Aβ cluster (ED Fig. 4d counts 1.04 per cell) and leaves it behind
 when it releases, so one release event should start one deposit of mass
-`b_max/n0_3D` = 9.4 × 10⁻⁴ units. The fitted value is 0.49 of that.
+`b_max/n0_3D` = 9.4 × 10⁻⁴ units. The fitted value is 0.50 of that.
 
 **The Irf8⁻ᐟ⁻ arm fits nothing.** Its graft carrier density is imposed at the measured
 0.133 of control (Fig. 2g), exactly as BLZ945's is, so the amyloid load is a prediction.
@@ -127,7 +133,8 @@ the load respond to the carrier count far more steeply than it does.
 
 ## Headline numbers
 
-- Graft load responds to carrier number as `load ~ nu^0.67`. Two independent
+- Between the intact graft and 87% depletion the graft load falls as `nu^0.68`
+  (the response is not a single power law: the local exponent rises with depletion). Two independent
   perturbations give **0.70 ± 0.17** (Irf8⁻ᐟ⁻) and **0.67 ± 0.18** (BLZ945),
   weighted mean **0.687 ± 0.123** — sublinear at 2.6σ.
 - **Two out-of-sample load predictions.** Irf8⁻ᐟ⁻ 0.26 against 0.244 ± 0.061 measured,
@@ -135,29 +142,31 @@ the load respond to the carrier count far more steeply than it does.
   (Charging the whole of the ED Fig. 6h per-cell cargo deficit to uptake moves the
   Irf8⁻ᐟ⁻ figure to 0.15; the two readings bracket the measurement.)
 - **The host load barely moves when the carriers go.** At 5% of normal carrier density
-  the host load is 1.05× control while the graft falls to 0.054×. Four independent
+  the host load is 1.05× control while the graft falls to 0.055×. Four independent
   experiments report the host unchanged: Grathwohl et al. (2009, 95–97% ablation),
   Spangenberg et al. (2016, ~80% elimination), Olmos-Alonso et al. (2016, CSF1R
   blockade) and ED Fig. 6b of the source paper itself (41.2 vs 38.6 plaques mm⁻²).
 - With carriers inert the graft load is **1.6 × 10⁻¹¹%**: the largest deposit anywhere
   inside it is 0.26 of a single seed mass, against the ten seed masses a deposit needs
   to be resolvable. The bottleneck now follows from deposit size, not from a threshold.
-- Graft microglia **749** mm⁻² at 2 weeks and **518** at 4, against measured 751 ± 84
+- Graft microglia **751** mm⁻² at 2 weeks and **517** at 4, against measured 751 ± 84
   and 517 ± 32 — the overshoot and decline are reproduced.
-- Carriers import **10.4%** of the Aβ crossing into the graft by 4 weeks, **15.4%** by 16;
+- Carriers import **10.5%** of the Aβ crossing into the graft by 4 weeks, **15.4%** by 16;
   diffusion brings the rest. Releases up to v1.0.6 gave 0.24% and 0.95%: the boundary fluxes
   were integrated by the trapezoid rule over nine output times, which overstated the
   diffusive import just after transplantation about seventyfold.
-- Screening lengths: 0.797 mm clean, 0.406 mm graft, 0.233 mm peri-graft host.
-  Export length `ell_x` = 0.186 mm; `Lambda` = 0.46.
-- Peak chemotactic drift 47.6 µm day⁻¹ ≈ 2 µm h⁻¹. Nimmerjahn et al. (2005) found 5%
-  of microglial somata shifting 1–2 µm h⁻¹ and no somal migration toward a lesion over
-  5.5 h, and Davalos et al. (2005) found processes converging without cell-body
-  movement over 1–3 h, so the fitted drift sits at the top of the measured range and is
-  consistent with both null results on their timescales.
-- Host load 1.86% of area at 4 weeks; graft-to-host ratio 0.31. Grathwohl et al. (2009)
+- Screening lengths at 4 weeks: 0.797 mm clean, 0.656 mm graft, 0.404 mm peri-graft host.
+  Export length `ell_x` = 0.304 mm; `Lambda` = 0.46.
+- Peak chemotactic drift 92.6 µm day⁻¹ ≈ 3.9 µm h⁻¹, reached about 1.5 days after
+  transplantation. Nimmerjahn et al. (2005) found 5% of microglial somata shifting
+  1–2 µm h⁻¹ and no somal migration toward a lesion over 5.5 h, and Davalos et al. (2005)
+  found processes converging without cell-body movement over 1–3 h, so the fitted drift is
+  two to four times what the imaging supports; the paper lists this as a limitation.
+  (Earlier versions of this file gave 47.6 µm day⁻¹, 0.186 mm and 0.46: those were read off
+  output times a week apart, which miss the peak.)
+- Host load 1.85% of area at 4 weeks; graft-to-host ratio 0.32. Grathwohl et al. (2009)
   report roughly 2% Aβ-covered area in APPPS1 neocortex at the matching age.
-- Lesion window amyloid rises 3.4-fold at 6 h and 4.8-fold at 24 h, against measured
+- Lesion window amyloid rises 3.4-fold at 6 h and 4.9-fold at 24 h, against measured
   2.94 ± 1.44 and 9.40 ± 8.59.
 
 ## Known limitations of this implementation

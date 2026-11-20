@@ -48,24 +48,24 @@ TGT_PCT  = D.irf8Load.val(1);      % 0.586 % area, Source Data Fig. 2h
 TGT_BLZ  = D.deplete.rel;          % 0.256
 TGT_NU   = D.lesNu.rel24;          % 1.82
 TS   = [0 7 14 21 28];
-NC   = 240;
+NC   = 400;                        % the reference grid of p210_params
 
 perPercent = 34.49;  k_a = 0.282;  m_seed = 4.62e-4;
 chi_s = 8.354e-2;    fnu_graft = 0.2739;  Q0les = 107.5;
 
 % ---- 1. the carrier field, from its own two measurements ----------------
 if verbose, fprintf('\n--- carrier field: chemotaxis and graft capacity ---\n'); end
-for it = 1:6
+for it = 1:12
     fcs   = @(cs) nuAt(14, NC, TS, k_a, perPercent, m_seed, cs, fnu_graft) - D.graftNu.val(1);
-    chi_s = bisect(fcs, 1e-3, 1.0, 5, 20, verbose, 'chi_s');
+    chi_s = bisect(fcs, 1e-3, 1.0, 0.25, 30, verbose, 'chi_s');
     ffn   = @(fn) nuAt(28, NC, TS, k_a, perPercent, m_seed, chi_s, fn) - D.graftNu.val(2);
-    fnuNew = bisect(ffn, 0.05, 1.5, 5, 20, verbose, 'fnu_g');
+    fnuNew = bisect(ffn, 0.05, 1.5, 0.25, 30, verbose, 'fnu_g');
     rel = abs(fnuNew - fnu_graft) / fnuNew;
     fnu_graft = fnuNew;
     if verbose
         fprintf('  it %d: chi_s = %.4g  fnu_graft = %.4g  (change %.2g)\n', it, chi_s, fnu_graft, rel);
     end
-    if rel < 5e-3, break; end
+    if rel < 2e-4, break; end
 end
 
 % ---- 2-4.  k_a, perPercent and m_seed -----------------------------------
@@ -74,14 +74,14 @@ end
 %   which k_a is fitted; m_seed sets the deposit number in the graft and
 %   therefore the graft load, to which perPercent is fitted.  They are
 %   brought to consistency together.
-for outer = 1:8
+for outer = 1:16
     if verbose, fprintf('\n--- outer %d: host monomer depletion ---\n', outer); end
     fa  = @(ka) depletion(NC, TS, ka, perPercent, m_seed, chi_s, fnu_graft) - TGT_DEPL;
-    k_a = bisect(fa, 1e-4, 50, 2e-3, 24, verbose, 'k_a');
+    k_a = bisect(fa, 1e-4, 50, 1e-4, 40, verbose, 'k_a');
 
     if verbose, fprintf('--- outer %d: histological unit conversion ---\n', outer); end
     ppOld = perPercent;
-    for it = 1:10
+    for it = 1:30
         L = loadOf('baseline', NC, TS, k_a, perPercent, m_seed, chi_s, fnu_graft);
         if L <= 0, break; end
         % the readout goes as kap*F^(2/3) and kap ~ perPercent^(-2/3) at
@@ -94,12 +94,12 @@ for outer = 1:8
             fprintf('  it %2d: perPercent = %.5g   graft load %.4f%%  (change %.2g)\n', ...
                     it, perPercent, L, rel);
         end
-        if rel < 1e-3, break; end
+        if rel < 5e-5, break; end
     end
 
     if verbose, fprintf('--- outer %d: deposit mass per release event ---\n', outer); end
     fm = @(ms) blzRatio(NC, TS, k_a, perPercent, ms, chi_s, fnu_graft) - TGT_BLZ;
-    msNew = bisect(fm, 1e-4, 3e0, 3e-3, 24, verbose, 'm_seed');
+    msNew = bisect(fm, 1e-4, 3e0, 1e-4, 40, verbose, 'm_seed');
     relm  = abs(msNew - m_seed) / msNew;
     m_seed = msNew;
 
@@ -107,14 +107,14 @@ for outer = 1:8
         fprintf('  outer %d: perPercent %.5g (change %.2g), m_seed %.5g (change %.2g)\n', ...
                 outer, perPercent, abs(perPercent-ppOld)/perPercent, m_seed, relm);
     end
-    if abs(perPercent - ppOld)/perPercent < 3e-3 && relm < 5e-3, break; end
+    if abs(perPercent - ppOld)/perPercent < 2e-4 && relm < 5e-4, break; end
 end
 
 
 % ---- 5. acute lesion signal strength ------------------------------------
 if verbose, fprintf('\n--- acute lesion signal ---\n'); end
 fq    = @(q) lesionRatio(q, perPercent, chi_s, m_seed) - TGT_NU;
-Q0les = bisect(fq, 10, 2e4, 2e-2, 24, verbose, 'Q0les');
+Q0les = bisect(fq, 10, 2e4, 5e-4, 40, verbose, 'Q0les');
 
 f_chi = 0.0;   % retired: the Irf8 arm no longer fits anything
 save('p210_fitted.mat', 'k_a', 'perPercent', 'm_seed', 'Q0les', ...
