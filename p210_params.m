@@ -34,6 +34,9 @@ p.N    = 320;          % finite-volume cells
 p.D_m   = 5.383;       % mm^2/day  (62.3 um^2/s, Waters 2010)
 p.lam_m = 8.467;       % 1/day     (9.8e-5 1/s, t_half 1.97 h, Cirrito 2003)
 p.q0    = 8.467;       % host production; normalises m -> 1 in clean tissue
+p.m_h   = 0.4;         % initial free level in the plaque-bearing host, as a
+                       % fraction of the clean-tissue level.  It matters only
+                       % for the first day: m relaxes at lam_m, 8.5 per day.
 p.deplTarget = 0.80;   % target host monomer depletion at 4 weeks (Hong 2011)
 p.rho   = 0.10;        % soluble fraction of released carrier cargo
 p.k_1   = 1e-8;        % homogeneous nucleation, per day per m^2

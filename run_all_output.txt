@@ -1,6 +1,6 @@
 ===========================================================
  P210  microglial carrier-diffusion model: run_all (quick)
- 2026-11-19 21:42
+ 2026-11-19 23:15
 ===========================================================
 
 --- fitted constants: six, one published target each ------
@@ -89,12 +89,12 @@
   tissue grows on the surface it already has, naive tissue has none.
 
 --- mass budget across the graft boundary ----------------
-  carrier-borne import by 4 weeks        0.4777 units
-  diffusive monomer import, 4 weeks       200.5 units
-  carrier share of imported mass         0.2377 %
-  carrier-borne import by 16 weeks        2.002 units
-  diffusive import by 16 weeks            207.8 units
-  carrier share at 16 weeks              0.9539 %
+  carrier-borne import by 4 weeks        0.3472 units
+  diffusive monomer import, 4 weeks       2.994 units
+  carrier share of imported mass        10.3928 %
+  carrier-borne import by 16 weeks        1.877 units
+  diffusive import by 16 weeks            10.33 units
+  carrier share at 16 weeks             15.3755 %
 
 --- net effect of the carriers: active minus inert -------
    weeks   graft change   host change   (percentage points of area)
@@ -187,8 +187,8 @@
   means is an artefact of assuming normality for a skewed quantity.
 
 --- onset of detectable deposit --------------------------
-  rim    1.00 weeks;   mid-graft 1.36 weeks;   centre 2.11 weeks
-  Irf8-/-: rim 2.37 weeks; deepest detected 0.446 mm of 0.45 mm
+  rim    1.00 weeks;   mid-graft 1.56 weeks;   centre 2.13 weeks
+  Irf8-/-: rim 2.51 weeks; deepest detected 0.446 mm of 0.45 mm
 
 --- laser lesion ------------------------------------------
   microglia in window, 24 h / 0 h      1.81  (measured 1.82)  FITTED
@@ -210,7 +210,7 @@
 --- positivity --------------------------------------------
   min nu = 0, min b = 0, min F = 0, min m = 0
 
-run_all finished in 27.1 s
+run_all finished in 36.3 s
 
 
 === observation operator: deposit number in, or left out ===

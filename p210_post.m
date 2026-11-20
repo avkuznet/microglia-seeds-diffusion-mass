@@ -76,53 +76,45 @@ end
 d.nuGraft = d.nuGraftVol * p.sect;        % cells per mm^2 on a 25 um section
 
 % ---- carrier-released amyloid delivered into the graft ------------------
-rel = zeros(nt,1);
-for k = 1:nt
-    b = sol.b(k,:)';
-    rel(k) = (1 - p.rho) * p.k_r * sum(G.Vc(gi) .* b(gi));
-end
-d.seedCum = cumtrapz(sol.t, rel);
+%   The time integral is taken by p210_solve over the solver's own steps
+%   (sol.dense), so it does not depend on the output times asked for.
+dn = sol.dense;
+d.seedCum = dn.seedCum;
 d.carrFrac = d.seedCum ./ max(d.graftTot, eps);
 
 % ---- mass imported across the graft boundary ----------------------------
 % Inward fluxes at the face nearest r = Rg: cargo carried by cells, and
 % free monomer arriving by diffusion.  Integrated in time these give the
-% total mass each route has delivered into the graft.
-ib = find(G.rf >= p.Rg, 1, 'first');
-ib = min(max(ib,2), G.N);
-qb = zeros(nt,1);  qm = zeros(nt,1);
-for k = 1:nt
-    m = sol.m(k,:)';  b = sol.b(k,:)';  nu = sol.nu(k,:)';  s = sol.s(k,:)';
-    F = sol.F(k,:)';  ck = max(sol.c(k,:)', p.c_min);
-    S = F ./ (1 + (F ./ (ck * p.m_c)).^(1/3));
-    v = p.chi_s*(s(ib)-s(ib-1))/G.dr + p.chi_F*(S(ib)-S(ib-1))/G.dr;
-    if v > 0, iu = ib-1; else, iu = ib; end
-    fillu = max(1 - nu(iu)/p.nu_max, 0);
-    Jb = -p.D_n*(b(ib)-b(ib-1))/G.dr + v*b(iu)*fillu;   % outward positive
-    Jm = -p.D_m*(m(ib)-m(ib-1))/G.dr;
-    qb(k) = -G.Af(ib) * Jb;                              % inward positive
-    qm(k) = -G.Af(ib) * Jm;
-end
-d.carrImport = cumtrapz(sol.t, qb);      % cargo carried in, model units
-d.diffImport = cumtrapz(sol.t, qm);      % free monomer diffused in
+% total mass each route has delivered into the graft.  The diffusive flux is
+% very large just after t = 0, so the integrals come from p210_solve too.
+d.carrImport = dn.carrImport;            % cargo carried in, model units
+d.diffImport = dn.diffImport;            % free monomer diffused in
 d.carrShare  = d.carrImport ./ max(d.carrImport + max(d.diffImport,0), eps);
 d.carrPerDeposit = d.carrImport ./ max(d.graftTot, eps);
 
 % ---- onset time against depth -------------------------------------------
+%   Read off the fine time grid kept by p210_solve, with the same
+%   observation operator as above.
 d.depth  = p.Rg - G.rc(gi);
 idx = find(gi);
 d.onsetT = nan(numel(idx),1);
+Fd = max(dn.Fg, 0);  cd = max(dn.cg, p.c_min);
+if meanfield
+    ad = Fd / p.perPercent;
+    ad(Fd <= p.F_thr) = 0;
+else
+    ad = p.kap * cd.^(1/3) .* Fd.^(2/3) ./ (1 + (p.detRatio * p.m_seed ./ max(Fd ./ cd, realmin)).^3);
+end
 for j = 1:numel(idx)
-    i = idx(j);
     % onset is the first time the deposit at this radius is resolvable and
     % covers more than p.aThr of the area
-    k = find(d.areaPct(:,i) > p.aThr, 1, 'first');
+    k = find(ad(:,j) > p.aThr, 1, 'first');
     if ~isempty(k) && k > 1
         % linear interpolation in time onto the threshold crossing
-        F1 = d.areaPct(k-1,i);  F2 = d.areaPct(k,i);
-        d.onsetT(j) = sol.t(k-1) + (p.aThr - F1)/(F2 - F1)*(sol.t(k)-sol.t(k-1));
+        F1 = ad(k-1,j);  F2 = ad(k,j);
+        d.onsetT(j) = dn.tt(k-1) + (p.aThr - F1)/(F2 - F1)*(dn.tt(k)-dn.tt(k-1));
     elseif ~isempty(k)
-        d.onsetT(j) = sol.t(k);
+        d.onsetT(j) = dn.tt(k);
     end
 end
 

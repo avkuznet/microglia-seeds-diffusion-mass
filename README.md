@@ -44,7 +44,7 @@ spurious extrema at the migration front.
 | `p210_params.m` | parameter sets: `'baseline'`, `'irf8ko'`, `'depleted'`, `'aged'`, `'nocarrier'` |
 | `p210_grid.m` | finite-volume grid (planar, cylindrical or spherical) and Jacobian sparsity |
 | `p210_rhs.m` | right-hand side: diffusion, chemotaxis, uptake, release, deposition |
-| `p210_solve.m` | method-of-lines driver around `ode15s` |
+| `p210_solve.m` | method-of-lines driver around `ode15s`; also integrates the fluxes across the graft boundary over the solver's own time steps and keeps the graft deposit fields on a fine time grid, so that the mass budget and the onset times do not depend on the output times asked for |
 | `p210_post.m` | observation operator and diagnostics: loads, densities, onset times, mass budget, length scales |
 | `p210_scales.m` | transport length scales `ell_m`, `ell_x` and `Lambda` on their own fine time grid; the peak chemotactic drift occurs in the first few days and is understated by a factor of two if read off the published output times |
 | `p210_ratiostats.m` | compares a model ratio with a measured one three ways: ratio of means with Gaussian errors, log scale, and bootstrap. Graft loads are strongly right-skewed, so the first misrepresents them and the log scale is the one quoted |
@@ -55,6 +55,7 @@ spurious extrema at the migration front.
 | `run_all.m` | reproduces every number quoted in the paper |
 | `make_figures.m` | Figs 1–8 and S1–S3 |
 | `p210_competition.m` | the two observation operators recalibrated and compared |
+| `p210_assumed.m` | each assumed input halved and doubled, one at a time: graft load, Irf8⁻ᐟ⁻ ratio and carrier share (Table S1), with two checks against published measurements |
 | `p210_diag.m` | scratch diagnostic for the monomer balance |
 | `smoke.m` | smoke test: solves the baseline case on a coarse time grid and prints loads, densities, carrier fraction and field minima |
 | `p210_fitted.mat` | stored calibration |
@@ -143,7 +144,10 @@ the load respond to the carrier count far more steeply than it does.
   to be resolvable. The bottleneck now follows from deposit size, not from a threshold.
 - Graft microglia **749** mm⁻² at 2 weeks and **518** at 4, against measured 751 ± 84
   and 517 ± 32 — the overshoot and decline are reproduced.
-- Carriers import **0.24%** of the Aβ crossing into the graft at 4 weeks, **0.95%** at 16.
+- Carriers import **10.4%** of the Aβ crossing into the graft by 4 weeks, **15.4%** by 16;
+  diffusion brings the rest. Releases up to v1.0.6 gave 0.24% and 0.95%: the boundary fluxes
+  were integrated by the trapezoid rule over nine output times, which overstated the
+  diffusive import just after transplantation about seventyfold.
 - Screening lengths: 0.797 mm clean, 0.406 mm graft, 0.233 mm peri-graft host.
   Export length `ell_x` = 0.186 mm; `Lambda` = 0.46.
 - Peak chemotactic drift 47.6 µm day⁻¹ ≈ 2 µm h⁻¹. Nimmerjahn et al. (2005) found 5%
