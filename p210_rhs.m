@@ -64,8 +64,11 @@ U_F  = p.phi * p.k_p * nu .* S .* fill;         % from the deposit
 rel  = p.k_r * b;
 
 % ---- balances -------------------------------------------------------------
-dm  = Lm + p.q0 * G.inHost - p.lam_m * m - grow - U_m + p.rho * rel;
-dF  = grow + (1 - p.rho) * rel + p.k_1 * m.^2 - U_F - p.k_c * nu .* S;
+%   Homogeneous nucleation takes its mass from the free pool, so the term
+%   k_1 m^2 that enters dF leaves dm.
+nuc = p.k_1 * m.^2;
+dm  = Lm + p.q0 * G.inHost - p.lam_m * m - grow - U_m + p.rho * rel - nuc;
+dF  = grow + (1 - p.rho) * rel + nuc - U_F - p.k_c * nu .* S;
 db  = Ldb + U_m + U_F - (p.k_d + p.k_r) * b;
 % Microglial density relaxes toward the local carrying capacity.  The graft
 % is embryonic tissue and supports fewer microglia than mature cortex: the

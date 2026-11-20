@@ -1,6 +1,6 @@
 ===========================================================
  P210  microglial carrier-diffusion model: run_all (quick)
- 2026-11-01 18:38
+ 2026-11-19 21:42
 ===========================================================
 
 --- fitted constants: six, one published target each ------
@@ -61,10 +61,10 @@
     1.0e-08     1.634e-11           0.258       2.3900
     1.0e-05     1.869e-08           0.272            -
     1.0e-04     5.599e-07           0.418            -
-    1.0e-03     0.0005351            2.46       2.3919
-    3.0e-03       0.01653            6.53            -
-    6.0e-03       0.08321            11.9            -
-    1.0e-02        0.1717            18.2            -
+    1.0e-03      0.000535            2.46       2.3919
+    3.0e-03       0.01652            6.53            -
+    6.0e-03       0.08317            11.9            -
+    1.0e-02        0.1716            18.2            -
   inert deposition first clears the 0.05 % floor at k_1 = 6e-03, and first
   reaches 10 seed masses at k_1 = 6e-03: 5.8 orders of magnitude above the
   declared value.  The carriers-active load is unchanged across that range,
@@ -210,7 +210,8 @@
 --- positivity --------------------------------------------
   min nu = 0, min b = 0, min F = 0, min m = 0
 
-run_all finished in 26.1 s
+run_all finished in 27.1 s
+
 
 === observation operator: deposit number in, or left out ===
 
