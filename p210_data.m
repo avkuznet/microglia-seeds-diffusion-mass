@@ -68,6 +68,8 @@ D.lesNu.wt    = [13.33 15.33 24.25];
 D.lesNu.wtErr = [ 2.58  4.32 11.67];
 D.lesNu.ko    = [11.00  8.20 13.00];
 D.lesNu.rel24 = 24.25 / 13.33;         % 1.82
+D.lesNu.koRel24 = 13.00 / 11.00;       % 1.18  Irf8-/- rise over 24 h
+D.lesNu.ko0Rel  = 11.00 / 13.33;       % 0.825 Irf8-/- count at t = 0, relative to Irf8+/+
 
 % Fig. 3c  amyloid area at the lesion at 24 h, um^2, in the same window
 D.lesAb.val   = [153.70 10.22];

@@ -1,6 +1,6 @@
 ===========================================================
  P210  microglial carrier-diffusion model: run_all (quick)
- 2026-11-20 00:08
+ 2026-11-21 19:26
 ===========================================================
 
 --- fitted constants: six, one published target each ------
@@ -10,6 +10,11 @@
   chi_s      = 0.085532    chemotactic sensitivity, mm^2/day per unit s
   fnu_graft  = 0.27115     graft microglial carrying capacity
   Q0les      = 107.14      acute lesion signal, 1/day
+
+--- fitted for the Irf8-/- lesion run only ----------------
+  fchiLes    = 0.18896     multiplier on chi_s that reproduces the 1.18-fold
+                          rise of microglia in the lesion window of
+                          Irf8-/- animals (Fig. 3e); not used in the grafts
 
 --- NOT fitted: the aged uptake-competence proxy ----------
   phiAged    = 0.494       EX VIVO PROXY, not fitted: the ratio of
@@ -25,7 +30,7 @@
   D_n   = 0.002246 mm^2/day   from graft arrival within 2 weeks
   k_1   = 1e-08    units/day   homogeneous nucleation at m = 1: DECLARED,
                               no tissue measurement exists.  The seeding
-                              bottleneck survives to k_1 ~ 6e-3 (see below)
+                              bottleneck survives to k_1 ~ 5e-3 (see below)
   k_2   = 0.5                 secondary nucleation on surface
   k_d   = 0.03     1/day      lysosomal degradation of cargo
   k_r   = 0.3      1/day      release of cargo
@@ -109,22 +114,47 @@
       16    2.397    1.038    1.035    4.947   1.61e-11
   relative to baseline at 4 weeks: Irf8-/- 0.258, BLZ945 0.256, aged 0.258
   measured (Source Data)         : Irf8-/- 0.244,  BLZ945 0.256,  aged 0.177
-  [BLZ945 is fitted via m_seed.  The Irf8-/- and aged load ratios
-   are PREDICTIONS: neither arm fits an amyloid parameter.  Irf8-/-
-   has its carrier density imposed at the measured 0.133 (Fig. 2g);
-   aged has the measured uptake 0.494 (ED Fig. 4d) and nothing else.]
+  [BLZ945 is fitted via m_seed.  The Irf8-/- load ratio is a PREDICTION:
+   its carrier density is imposed at the measured 0.133 (Fig. 2g) and
+   nothing is fitted.  The aged ratio fits nothing either, but it is an
+   ILLUSTRATION, not a test: it depends on assumed inputs, shown next.]
 
---- Cx3cr1-/-: selective loss of the deposit-surface route ---
+--- aged recipients: what the 4-week ratio depends on -----
+  The aged run uses the ex vivo uptake proxy phi = 0.494 and an ASSUMED
+  host load of 4.0% of area, with the host deposit density c_h and the
+  saturation density c_sat both scaled with it (p210_derive).
+    assumed aged host load, % area     c_h = c_sat, /mm^3    load ratio
+                          2.0                 8570        0.552
+                          3.0                12855        0.359
+                          4.0                17140        0.258
+                          6.0                25710        0.164
+                          8.0                34280        0.121
+    the ratio is at or below the upper 1 s.e.m. limit, 0.311, for loads of 3.4% or more
+    c_sat kept at the young value, 857 /mm^3        ratio 1.010
+    aged host, normal uptake (phi = 1)              ratio 1.014
+    young host, aged uptake (phi = 0.494)            ratio 0.754
+  measured                                          ratio 0.177 +/- 0.134
+
+--- Cx3cr1-/-: two limiting cases ------------------------
   Those recipients keep a normal graft microglial density and lose three
   quarters of the amyloid, which no change in carrier NUMBER can produce.
-  The model already loads carriers by two routes, soluble (k_u) and deposit
-  surface (phi k_p).  Cx3cr1 mediates protofibril phagocytosis (Liu 2010),
-  so the genotype is the second route switched off; nothing is tuned.
+  (1) Loss of the deposit-surface uptake route, phi = 0.  A limiting test
+      of the uptake terms, NOT the biology of the knockout: Liu et al.
+      (2010) found more phagocytosis and less deposition without Cx3cr1.
     graft microglia at 4 wk   model   517 of   517 (1.000)   measured 0.979
     graft load at 4 wk        model 0.156 of 0.586 (0.267)   measured 0.273
     phi is bounded, not merely set to zero: the largest value still inside
     the measured 1 s.e.m. interval is phi = 0.060, so the data require the
     fibrillar-uptake route reduced by at least 94%.
+    host load at 4 wk         1.056 of control
+    enhanced uptake alone, phi = 2: graft load 1.291 of control
+  (2) Faster degradation of cargo, k_d raised.  This follows the reading
+      of the source paper, a higher clearance propensity.
+    measured ratio       0.273: k_d x  23.9 = 0.717 /day, fraction released k_r/(k_d+k_r) = 0.29
+      graft microglia 1.000 of control, host load at 4 wk 0.890 of control
+    upper 1 s.e.m. limit 0.366: k_d x  17.8 = 0.534 /day, fraction released k_r/(k_d+k_r) = 0.36
+    lower 1 s.e.m. limit 0.181: k_d x  33.7 = 1.010 /day, fraction released k_r/(k_d+k_r) = 0.23
+    baseline: k_d = 0.030 /day, fraction released 0.91
 
 --- can the carrier field be filled at an imaged somal speed? ---
   Nimmerjahn (2005): 5% of somata shift 1-2 um/h.  The calibrated peak
@@ -194,13 +224,18 @@
   microglia in window, 24 h / 0 h      1.82  (measured 1.82)  FITTED
   amyloid in window, 6 h / 0 h         3.43  (measured 2.94 +/- 1.44)
   amyloid in window, 24 h / 0 h        4.88  (measured 9.40 +/- 8.59)
-  Irf8-/- amyloid, 24 h / 0 h          1.77  (measured 6.45 +/- 6.24)
+  Irf8-/- run: window count at t = 0 set to 0.825 of control (measured, Fig. 3e)
+  Irf8-/- microglia, 24 h / 0 h        1.18  (measured 1.18)  FITTED via fchiLes = 0.189
+  Irf8-/- microglia, 6 h / 0 h         1.15  (measured 0.75)
+  Irf8+/+ microglia, 6 h / 0 h         1.70  (measured 1.15)
+  Irf8-/- amyloid, 6 h / 0 h           2.02  (measured 1.02 +/- 0.25)
+  Irf8-/- amyloid, 24 h / 0 h          2.88  (measured 6.45 +/- 6.24)
   the 15.0-fold ratio of 24 h AREAS is not a test of the model: the two
   genotypes did not start level.  Fig. 3c and 3d together imply 16.35 um^2
   in Irf8+/+ at t = 0 against 1.58 in Irf8-/-, so 15.0 = 10.3 already there
   x 1.46 contributed by delivery.  The model starts both level, so only
   the second factor tests it:
-  ratio of 24 h INCREMENTS             2.76  (measured 1.46)
+  ratio of 24 h INCREMENTS             1.70  (measured 1.46)
 
 --- grid convergence --------------------------------------
   N =  200 :  4 weeks 0.5873 %   16 weeks 2.3977 %
@@ -210,7 +245,7 @@
 --- positivity --------------------------------------------
   min nu = 0, min b = 0, min F = 0, min m = 0
 
-run_all finished in 64.0 s
+run_all finished in 140.5 s
 
 === observation operator: deposit number in, or left out ===
 

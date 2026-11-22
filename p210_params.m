@@ -170,10 +170,15 @@ p.n0_3D = 3.2e4;       % homeostatic microglial density, cells/mm^3
 p.f_chi = 0.15;        % FITTED  Irf8-/- multiplier on chemotaxis and motility
 p.k_a   = 0.40;        % FITTED  surface growth rate constant, 1/day per unit S
 p.Q0les = 600;         % FITTED  acute lesion signal strength, 1/day
+p.fchiLes = 0.19;      % FITTED  multiplier on chi_s in the Irf8-/- LESION run
+                       % only (p210_lesion), from the 1.18-fold rise of
+                       % microglia in the lesion window of Irf8-/- animals
+                       % (Fig. 3e).  It is not a constant of the grafting
+                       % model and is used nowhere else.
 if exist('p210_fitted.mat','file')
     L = load('p210_fitted.mat');
     fn = {'k_a','f_chi','Q0les','perPercent','F_thr', ...
-          'chi_s','fnu_graft','m_seed'};
+          'chi_s','fnu_graft','m_seed','fchiLes'};
     for q = 1:numel(fn)
         if isfield(L,fn{q}), p.(fn{q}) = L.(fn{q}); end
     end
@@ -244,11 +249,14 @@ switch p.variant
         % against 517 per mm^2 (ED Fig. 5b), and a quarter of the amyloid
         % (ED Fig. 5c).  The model already distinguishes the two routes by
         % which a carrier loads: U_m from the soluble pool, at k_u, and U_F
-        % from the deposit surface, at phi k_p.  Cx3cr1 mediates selective
-        % phagocytosis of protofibrillar Abeta (Liu et al. 2010), which is
-        % the second route, so the genotype is represented by switching that
-        % route off and changing nothing else.  phi = 0 is a limit, not a
-        % fitted value, and the carrier density is left alone.
+        % from the deposit surface, at phi k_p.  This variant switches the
+        % second route off and changes nothing else.  It is a LIMITING CASE
+        % that tests the uptake terms, not a description of the knockout:
+        % Liu et al. (2010) found more microglial phagocytosis and less
+        % deposition in Cx3cr1-deficient mice, and d'Errico et al. attribute
+        % the lower graft load to that higher clearance propensity.  run_all
+        % also reports the reading that follows the biology, faster
+        % degradation of cargo (k_d raised), which needs no variant.
         p.phi = 0;
     case 'nocarrier'
         p.k_p = 0; p.k_u = 0; p.k_r = 0;  % carriers present but inert

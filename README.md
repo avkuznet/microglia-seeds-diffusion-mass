@@ -41,7 +41,7 @@ spurious extrema at the migration front.
 
 | file | purpose |
 |---|---|
-| `p210_params.m` | parameter sets: `'baseline'`, `'irf8ko'`, `'depleted'`, `'aged'`, `'nocarrier'` |
+| `p210_params.m` | parameter sets: `'baseline'`, `'irf8ko'`, `'depleted'`, `'aged'`, `'cx3cr1ko'`, `'nocarrier'` |
 | `p210_grid.m` | finite-volume grid (planar, cylindrical or spherical) and Jacobian sparsity |
 | `p210_rhs.m` | right-hand side: diffusion, chemotaxis, uptake, release, deposition |
 | `p210_solve.m` | method-of-lines driver around `ode15s`; also integrates the fluxes across the graft boundary over the solver's own time steps and keeps the graft deposit fields on a fine time grid, so that the mass budget and the onset times do not depend on the output times asked for |
@@ -49,8 +49,8 @@ spurious extrema at the migration front.
 | `p210_scales.m` | transport length scales `ell_m`, `ell_x` and `Lambda` on their own fine time grid; the peak chemotactic drift occurs in the first few days and is understated by a factor of two if read off the published output times |
 | `p210_ratiostats.m` | compares a model ratio with a measured one three ways: ratio of means with Gaussian errors, log scale, and bootstrap. Graft loads are strongly right-skewed, so the first misrepresents them and the log scale is the one quoted |
 | `p210_derive.m` | quantities that follow from the declared ones (`kap`, `F_h`, `c_h`, `m_c`) |
-| `p210_lesion.m` | focal laser-lesion geometry used for calibration and the out-of-sample test |
-| `p210_calibrate.m` | fits the six free constants to six published targets |
+| `p210_lesion.m` | focal laser-lesion geometry; the Irf8⁻ᐟ⁻ run is set from the lesion data (window count 0.825 of control, chemotactic response reduced by `fchiLes`) |
+| `p210_calibrate.m` | fits the six free constants to six published targets, and `fchiLes` for the Irf8⁻ᐟ⁻ lesion run |
 | `p210_data.m` | measurements from the Source Data files of d'Errico et al. (2022) |
 | `run_all.m` | reproduces every number quoted in the paper |
 | `make_figures.m` | Figs 1–8 and S1–S3 |
@@ -86,17 +86,27 @@ other comparison in the paper is a prediction.
 `chi_s` and `fnu_graft` fix the microglial field, which is an input to the amyloid
 problem rather than a result of it.
 
-**The aged arm fits nothing either.** Its uptake per cell is the measured 0.494 of
-ED Fig. 4d and its host load is declared, so its graft load is a prediction. Earlier
+One further number is fitted for the Irf8⁻ᐟ⁻ **lesion** run only and is used nowhere in
+the grafting model: `fchiLes` = 0.19, a multiplier on `chi_s` that reproduces the
+1.18-fold rise of microglia in the lesion window of Irf8⁻ᐟ⁻ animals (Fig. 3e). That run
+starts from the measured window count, 0.825 of control. Up to v1.0.10 it used the
+graft density ratio 0.133 with an unchanged chemotactic response, which gave a relative
+microglial rise of 2.04 where 1.18 was measured.
+
+**The aged arm fits nothing either, but it is an illustration, not a test.** Its uptake
+per cell is the ex vivo proxy 0.494 of ED Fig. 4d and its host load is assumed, 4.0% of
+area, with the host deposit density `c_h` and the saturation density `c_sat` scaled with
+it (`p210_derive`). The 4-week ratio of 0.26 depends strongly on those assumptions:
+host loads of 2, 3, 6 and 8% give 0.55, 0.36, 0.16 and 0.12; with `c_sat` kept at its
+young value the ratio is 1.01; the aged host with normal uptake gives 1.01 and the aged
+uptake in a young host 0.75. `run_all` prints these. Earlier
 versions also fitted a reduced cargo release rate for aged carriers, because with a
 mass-proportional readout the measured two-fold uptake deficit fell far short of the
-observed ratio — it needed a thirty-fold loss. With the discrete-deposit readout the
-load follows delivery sublinearly and the measured deficit alone lands inside the
-experimental error. `p.useAgedRelease` restores the old fit, which moves the predicted
-ratio from 0.26 to 0.18 against a measured 0.177 ± 0.134; Njie et al. (2012) support
-that mechanism independently (young microglia expel internalised Aβ within about three
-hours without degrading it, aged microglia show no significant expulsion), but the data
-no longer require it.
+observed ratio — it needed a thirty-fold loss. `p.useAgedRelease` restores the old fit,
+which moves the ratio from 0.26 to 0.18 against a measured 0.177 ± 0.134; Njie et al.
+(2012) support that mechanism independently (young microglia expel internalised Aβ
+within about three hours without degrading it, aged microglia show no significant
+expulsion), but the data do not require it.
 
 `m_seed` has an independent estimate it was not fitted to. A loaded microglial cell
 carries about one Aβ cluster (ED Fig. 4d counts 1.04 per cell) and leaves it behind
@@ -137,10 +147,12 @@ the load respond to the carrier count far more steeply than it does.
   (the response is not a single power law: the local exponent rises with depletion). Two independent
   perturbations give **0.70 ± 0.17** (Irf8⁻ᐟ⁻) and **0.67 ± 0.18** (BLZ945),
   weighted mean **0.687 ± 0.123** — sublinear at 2.6σ.
-- **Two out-of-sample load predictions.** Irf8⁻ᐟ⁻ 0.26 against 0.244 ± 0.061 measured,
-  and aged 0.26 against 0.177 ± 0.134 — neither arm fits an amyloid parameter.
+- **One out-of-sample load prediction.** Irf8⁻ᐟ⁻ 0.26 against 0.244 ± 0.061 measured,
+  with no amyloid parameter fitted.
   (Charging the whole of the ED Fig. 6h per-cell cargo deficit to uptake moves the
-  Irf8⁻ᐟ⁻ figure to 0.15; the two readings bracket the measurement.)
+  Irf8⁻ᐟ⁻ figure to 0.15; the two readings bracket the measurement.) The aged ratio,
+  0.26 against 0.177 ± 0.134, fits nothing either but depends on assumed inputs and is
+  an illustration (see above).
 - **The host load barely moves when the carriers go.** At 5% of normal carrier density
   the host load is 1.05× control while the graft falls to 0.055×. Four independent
   experiments report the host unchanged: Grathwohl et al. (2009, 95–97% ablation),
@@ -167,22 +179,32 @@ the load respond to the carrier count far more steeply than it does.
 - Host load 1.85% of area at 4 weeks; graft-to-host ratio 0.32. Grathwohl et al. (2009)
   report roughly 2% Aβ-covered area in APPPS1 neocortex at the matching age.
 - Lesion window amyloid rises 3.4-fold at 6 h and 4.9-fold at 24 h, against measured
-  2.94 ± 1.44 and 9.40 ± 8.59.
+  2.94 ± 1.44 and 9.40 ± 8.59. In the Irf8⁻ᐟ⁻ run it rises 2.9-fold at 24 h against
+  6.45 ± 6.24, so the baseline-normalised genotype ratio is 1.70 against a measured 1.46.
 
 ## Known limitations of this implementation
 
-- **The genotype ratio at the lesion is badly under-predicted**: 3.1 against a measured
-  15.0 (Fig. 3c). The 24 h increments themselves are both inside the published scatter,
-  which is wide, but the ratio is the tighter comparison and the model fails it.
-- **Cx3cr1⁻ᐟ⁻ is not reproduced.** Those recipients have the same graft microglial
-  density as controls (506 vs 517 mm⁻²) and a quarter of the amyloid (0.273, ED Fig.
-  5b,c). Removing the chemotactic term entirely gives 0.58, so the model has no way to
-  lose that much amyloid at an unchanged cell count.
+- **The lesion runs are matched at 24 h only.** The microglial accumulation at 24 h is
+  fitted in both genotypes. At 6 h the modelled microglia have risen 1.70-fold against a
+  measured 1.15 (Irf8⁺ᐟ⁺) and 1.15-fold against 0.75 (Irf8⁻ᐟ⁻), and the Irf8⁻ᐟ⁻ window
+  amyloid 2.0-fold against 1.02 ± 0.25. The 15.0-fold ratio of absolute 24 h areas
+  (Fig. 3c) is not a test: the genotypes did not start level.
+- **Cx3cr1⁻ᐟ⁻ is represented by two limiting cases, neither a fit.** Those recipients
+  have the same graft microglial density as controls (506 vs 517 mm⁻²) and a quarter of
+  the amyloid (0.273, ED Fig. 5b,c). Switching off fibrillar uptake (`phi` = 0, the
+  `'cx3cr1ko'` variant) gives 0.267, but runs against the biology: Liu et al. (2010)
+  found more phagocytosis and less deposition without Cx3cr1, and d'Errico et al.
+  attribute the lower graft load to that higher clearance propensity. Faster degradation
+  of cargo follows that reading: `k_d` raised 24-fold (0.72 day⁻¹; 18- to 34-fold for
+  the 1 s.e.m. interval) gives 0.273 at unchanged carrier density, with the host load
+  11% lower, against 6% higher at `phi` = 0. Enhanced uptake alone (`phi` = 2) raises
+  the graft load to 1.29.
 - The host load is not measured in the source experiment, and cross-laboratory
   percentage-area comparisons are not reliable: Bader et al. (2023) give 0.08% at
   3 months for 5xFAD Aβ1-x, Grathwohl et al. (2009) about 2% for APPPS1 at 3–4 months,
   and the three cohorts within d'Errico et al. themselves span a factor of four.
 - `c_sat`, the deposit density at which releases stop founding new deposits, is
-  declared equal to the host density rather than measured.
+  declared equal to the host density rather than measured. In the aged run it is
+  therefore 20 times larger, and the aged ratio depends on it more than on anything else.
 - The chemoattractant amplitude is fitted separately for the injection track and for
   the laser lesion, which are different insults.

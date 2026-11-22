@@ -29,6 +29,10 @@ fprintf('  m_seed     = %-10.5g  deposit mass per carrier release event\n', p.m_
 fprintf('  chi_s      = %-10.5g  chemotactic sensitivity, mm^2/day per unit s\n', p.chi_s);
 fprintf('  fnu_graft  = %-10.5g  graft microglial carrying capacity\n', p.fnu_graft);
 fprintf('  Q0les      = %-10.5g  acute lesion signal, 1/day\n', p.Q0les);
+fprintf('\n--- fitted for the Irf8-/- lesion run only ----------------\n');
+fprintf('  fchiLes    = %-10.5g  multiplier on chi_s that reproduces the %.2f-fold\n', p.fchiLes, D.lesNu.koRel24);
+fprintf('                          rise of microglia in the lesion window of\n');
+fprintf('                          Irf8-/- animals (Fig. 3e); not used in the grafts\n');
 
 fprintf('\n--- NOT fitted: the aged uptake-competence proxy ----------\n');
 fprintf('  phiAged    = %-10.5g  EX VIVO PROXY, not fitted: the ratio of\n', p.phiAged);
@@ -44,7 +48,7 @@ fprintf('  lam_m = %-8.4g 1/day      Cirrito (2003), t_1/2 = 1.97 h\n', p.lam_m)
 fprintf('  D_n   = %-8.4g mm^2/day   from graft arrival within 2 weeks\n', p.D_n);
 fprintf('  k_1   = %-8.4g units/day   homogeneous nucleation at m = 1: DECLARED,\n', p.k_1);
 fprintf('                              no tissue measurement exists.  The seeding\n');
-fprintf('                              bottleneck survives to k_1 ~ 6e-3 (see below)\n');
+fprintf('                              bottleneck survives to k_1 ~ 5e-3 (see below)\n');
 fprintf('  k_2   = %-8.4g            secondary nucleation on surface\n', p.k_2);
 fprintf('  k_d   = %-8.4g 1/day      lysosomal degradation of cargo\n', p.k_d);
 fprintf('  k_r   = %-8.4g 1/day      release of cargo\n', p.k_r);
@@ -179,17 +183,46 @@ fprintf('  relative to baseline at 4 weeks: Irf8-/- %.3f, BLZ945 %.3f, aged %.3f
     dK.loadPct(i4)/dB.loadPct(i4), dD.loadPct(i4)/dB.loadPct(i4), dA.loadPct(i4)/dB.loadPct(i4));
 fprintf('  measured (Source Data)         : Irf8-/- %.3f,  BLZ945 %.3f,  aged %.3f\n', ...
     D.irf8Load.rel, D.deplete.rel, D.aged.rel);
-fprintf('  [BLZ945 is fitted via m_seed.  The Irf8-/- and aged load ratios\n');
-fprintf('   are PREDICTIONS: neither arm fits an amyloid parameter.  Irf8-/-\n');
-fprintf('   has its carrier density imposed at the measured 0.133 (Fig. 2g);\n');
-fprintf('   aged has the measured uptake 0.494 (ED Fig. 4d) and nothing else.]\n');
+fprintf('  [BLZ945 is fitted via m_seed.  The Irf8-/- load ratio is a PREDICTION:\n');
+fprintf('   its carrier density is imposed at the measured 0.133 (Fig. 2g) and\n');
+fprintf('   nothing is fitted.  The aged ratio fits nothing either, but it is an\n');
+fprintf('   ILLUSTRATION, not a test: it depends on assumed inputs, shown next.]\n');
 
-fprintf('\n--- Cx3cr1-/-: selective loss of the deposit-surface route ---\n');
+fprintf('\n--- aged recipients: what the 4-week ratio depends on -----\n');
+rB = dB.loadPct(i4);
+fprintf('  The aged run uses the ex vivo uptake proxy phi = %.3f and an ASSUMED\n', p.phiAged);
+fprintf('  host load of 4.0%% of area, with the host deposit density c_h and the\n');
+fprintf('  saturation density c_sat both scaled with it (p210_derive).\n');
+fprintf('    assumed aged host load, %% area     c_h = c_sat, /mm^3    load ratio\n');
+for Fp = [2 3 4 6 8]
+    pa = p210_params('aged');  pa.F_h_pct = Fp;  pa = p210_derive(pa);
+    fprintf('    %25.1f   %18.0f   %10.3f\n', Fp, pa.c_h, ...
+            p210_post(p210_solve(pa, TS)).loadPct(i4) / rB);
+end
+hiA = D.aged.rel + D.aged.relErr;      % upper 1 s.e.m. limit of the measurement
+aa = 2; bb = 4;
+for it = 1:24
+    mm = 0.5*(aa+bb);  pa = p210_params('aged');  pa.F_h_pct = mm;  pa = p210_derive(pa);
+    if p210_post(p210_solve(pa, TS)).loadPct(i4) / rB > hiA, aa = mm; else, bb = mm; end
+end
+fprintf('    the ratio is at or below the upper 1 s.e.m. limit, %.3f, for loads of %.1f%% or more\n', hiA, bb);
+pa = p210_params('aged');  pa.c_sat = p.c_sat;
+fprintf('    c_sat kept at the young value, %.0f /mm^3        ratio %.3f\n', p.c_sat, ...
+        p210_post(p210_solve(pa, TS)).loadPct(i4) / rB);
+pa = p210_params('aged');  pa.phi = 1;
+fprintf('    aged host, normal uptake (phi = 1)              ratio %.3f\n', ...
+        p210_post(p210_solve(pa, TS)).loadPct(i4) / rB);
+pa = p210_params('baseline');  pa.phi = p.phiAged;
+fprintf('    young host, aged uptake (phi = %.3f)            ratio %.3f\n', p.phiAged, ...
+        p210_post(p210_solve(pa, TS)).loadPct(i4) / rB);
+fprintf('  measured                                          ratio %.3f +/- %.3f\n', D.aged.rel, D.aged.relErr);
+
+fprintf('\n--- Cx3cr1-/-: two limiting cases ------------------------\n');
 fprintf('  Those recipients keep a normal graft microglial density and lose three\n');
 fprintf('  quarters of the amyloid, which no change in carrier NUMBER can produce.\n');
-fprintf('  The model already loads carriers by two routes, soluble (k_u) and deposit\n');
-fprintf('  surface (phi k_p).  Cx3cr1 mediates protofibril phagocytosis (Liu 2010),\n');
-fprintf('  so the genotype is the second route switched off; nothing is tuned.\n');
+fprintf('  (1) Loss of the deposit-surface uptake route, phi = 0.  A limiting test\n');
+fprintf('      of the uptake terms, NOT the biology of the knockout: Liu et al.\n');
+fprintf('      (2010) found more phagocytosis and less deposition without Cx3cr1.\n');
 pC = p210_params('cx3cr1ko');  dC = p210_post(p210_solve(pC, TS));
 fprintf('    graft microglia at 4 wk   model %5.0f of %5.0f (%.3f)   measured %.3f\n', ...
         dC.nuGraft(i4), dB.nuGraft(i4), dC.nuGraft(i4)/dB.nuGraft(i4), D.cx3cr1.nuRel);
@@ -206,6 +239,30 @@ end
 fprintf('    phi is bounded, not merely set to zero: the largest value still inside\n');
 fprintf('    the measured 1 s.e.m. interval is phi = %.3f, so the data require the\n', aa);
 fprintf('    fibrillar-uptake route reduced by at least %.0f%%.\n', 100*(1-aa));
+fprintf('    host load at 4 wk         %.3f of control\n', dC.hostPct(i4)/dB.hostPct(i4));
+pE = p210_params('baseline');  pE.phi = 2;  dE = p210_post(p210_solve(pE, TS));
+fprintf('    enhanced uptake alone, phi = 2: graft load %.3f of control\n', dE.loadPct(i4)/dB.loadPct(i4));
+fprintf('  (2) Faster degradation of cargo, k_d raised.  This follows the reading\n');
+fprintf('      of the source paper, a higher clearance propensity.\n');
+tg = [D.cx3cr1.rel, D.cx3cr1.rel + D.cx3cr1.relErr, D.cx3cr1.rel - D.cx3cr1.relErr];
+nm = {'measured ratio      ', 'upper 1 s.e.m. limit', 'lower 1 s.e.m. limit'};
+for q = 1:3
+    aa = 0; bb = log(1000);
+    for it = 1:28
+        mm = 0.5*(aa+bb);  pm = p210_params('baseline');  pm.k_d = exp(mm) * p.k_d;
+        rr = p210_post(p210_solve(pm, TS)).loadPct(i4) / dB.loadPct(i4);
+        if rr > tg(q), aa = mm; else, bb = mm; end
+    end
+    fk = exp(aa);
+    fprintf('    %s %.3f: k_d x %5.1f = %.3f /day, fraction released k_r/(k_d+k_r) = %.2f\n', ...
+            nm{q}, tg(q), fk, fk*p.k_d, p.k_r/(fk*p.k_d + p.k_r));
+    if q == 1
+        pm = p210_params('baseline');  pm.k_d = fk * p.k_d;  dm = p210_post(p210_solve(pm, TS));
+        fprintf('      graft microglia %.3f of control, host load at 4 wk %.3f of control\n', ...
+                dm.nuGraft(i4)/dB.nuGraft(i4), dm.hostPct(i4)/dB.hostPct(i4));
+    end
+end
+fprintf('    baseline: k_d = %.3f /day, fraction released %.2f\n', p.k_d, p.k_r/(p.k_d + p.k_r));
 
 fprintf('\n--- can the carrier field be filled at an imaged somal speed? ---\n');
 fprintf('  Nimmerjahn (2005): 5%% of somata shift 1-2 um/h.  The calibrated peak\n');
@@ -307,6 +364,15 @@ fprintf('  amyloid in window, 6 h / 0 h         %.2f  (measured %.2f +/- %.2f)\n
     Lw.AbWinRel(i6), D.lesInc.wt(2), D.lesInc.wtErr(2));
 fprintf('  amyloid in window, 24 h / 0 h        %.2f  (measured %.2f +/- %.2f)\n', ...
     Lw.AbWinRel(end), D.lesInc.wt(3), D.lesInc.wtErr(3));
+fprintf('  Irf8-/- run: window count at t = 0 set to %.3f of control (measured, Fig. 3e)\n', D.lesNu.ko0Rel);
+fprintf('  Irf8-/- microglia, 24 h / 0 h        %.2f  (measured %.2f)  FITTED via fchiLes = %.3f\n', ...
+    Lk.nuWin(end)/Lk.nuWin(1), D.lesNu.koRel24, p.fchiLes);
+fprintf('  Irf8-/- microglia, 6 h / 0 h         %.2f  (measured %.2f)\n', ...
+    Lk.nuWin(i6)/Lk.nuWin(1), D.lesNu.ko(2)/D.lesNu.ko(1));
+fprintf('  Irf8+/+ microglia, 6 h / 0 h         %.2f  (measured %.2f)\n', ...
+    Lw.nuWin(i6)/Lw.nuWin(1), D.lesNu.wt(2)/D.lesNu.wt(1));
+fprintf('  Irf8-/- amyloid, 6 h / 0 h           %.2f  (measured %.2f +/- %.2f)\n', ...
+    Lk.AbWinRel(i6), D.lesInc.ko(2), D.lesInc.koErr(2));
 fprintf('  Irf8-/- amyloid, 24 h / 0 h          %.2f  (measured %.2f +/- %.2f)\n', ...
     Lk.AbWinRel(end), D.lesInc.ko(3), D.lesInc.koErr(3));
 fprintf('  the 15.0-fold ratio of 24 h AREAS is not a test of the model: the two\n');

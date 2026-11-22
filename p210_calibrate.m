@@ -28,7 +28,12 @@ function out = p210_calibrate(verbose)
 %   host load is declared, so its graft load is a prediction too,
 %   conditional on that proxy.
 %
-%   The Irf8-/- arm is fitted to NOTHING.  Its graft carrier density is
+%   One further number, fchiLes, is fitted for the Irf8-/- LESION run only
+%   (step 6 below): a multiplier on chi_s that reproduces the 1.18-fold rise
+%   of microglia in the lesion window of Irf8-/- animals (Fig. 3e).  It is
+%   used nowhere in the grafting model.
+%
+%   The Irf8-/- GRAFT arm is fitted to NOTHING.  Its graft carrier density is
 %   imposed at the measured 0.133 of control (Fig. 2g) and nothing else is
 %   changed: motility is NOT scaled, because Fig. 2d,e measures the travel
 %   of microglial PROCESSES and the model's drift is translocation of the
@@ -116,9 +121,19 @@ if verbose, fprintf('\n--- acute lesion signal ---\n'); end
 fq    = @(q) lesionRatio(q, perPercent, chi_s, m_seed) - TGT_NU;
 Q0les = bisect(fq, 10, 2e4, 5e-4, 40, verbose, 'Q0les');
 
-f_chi = 0.0;   % retired: the Irf8 arm no longer fits anything
+% ---- 6. chemotactic response in the Irf8-/- lesion run -------------------
+%   Not a constant of the grafting model.  The Irf8-/- LESION run starts
+%   from the measured window count (0.825 of control) and its chemotactic
+%   sensitivity is multiplied by fchiLes so that the microglia in the window
+%   rise 1.18-fold in 24 h, as measured (Fig. 3e).  The amyloid that then
+%   arrives in the window is the prediction.
+if verbose, fprintf('\n--- Irf8-/- lesion run: chemotactic response ---\n'); end
+ff      = @(f) lesionRatioKO(Q0les, perPercent, chi_s, m_seed, f) - D.lesNu.koRel24;
+fchiLes = bisect(ff, 1e-3, 1.0, 5e-4, 40, verbose, 'fchiLes');
+
+f_chi = 0.0;   % retired: the Irf8 GRAFT arm fits nothing
 save('p210_fitted.mat', 'k_a', 'perPercent', 'm_seed', 'Q0les', ...
-     'chi_s', 'fnu_graft', 'f_chi');
+     'chi_s', 'fnu_graft', 'f_chi', 'fchiLes');
 
 % ---- report --------------------------------------------------------------
 A = struct('NC',NC,'TS',TS,'k_a',k_a,'pp',perPercent,'ms',m_seed, ...
@@ -139,6 +154,8 @@ out.hostPct    = Hw;
 out.blz        = Ld / max(Lw, eps);
 out.agedRatio  = agedRatio(NC, TS, k_a, perPercent, m_seed, chi_s, fnu_graft);
 out.nuRatio    = lesionRatio(Q0les, perPercent, chi_s, m_seed);
+out.fchiLes    = fchiLes;
+out.nuRatioLesKO = lesionRatioKO(Q0les, perPercent, chi_s, m_seed, fchiLes);
 out.ratio      = Lk / max(Lw, eps);          % PREDICTION
 out.nuRatio_ko = Nk / max(Nw, eps);          % PREDICTION
 out.nu2        = nuAt(14, NC, TS, k_a, perPercent, m_seed, chi_s, fnu_graft);
@@ -153,6 +170,8 @@ if verbose
     fprintf('  perPercent = %.5g         graft load %.3f%% (target %.3f%%)\n', perPercent, out.load_wt, TGT_PCT);
     fprintf('  m_seed     = %.5g         BLZ945 load ratio %.3f (target %.3f)\n', m_seed, out.blz, TGT_BLZ);
     fprintf('  Q0les      = %.5g 1/day   lesion nu ratio %.3f (target %.2f)\n', Q0les, out.nuRatio, TGT_NU);
+    fprintf('\n=== fitted for the Irf8-/- lesion run only ===\n');
+    fprintf('  fchiLes    = %.5g         Irf8-/- lesion nu ratio %.3f (target %.3f)\n', fchiLes, out.nuRatioLesKO, D.lesNu.koRel24);
     fprintf('\n=== predictions (nothing below was fitted) ===\n');
     fprintf('  Irf8-/- graft cell count ratio : %.3f (measured %.3f)\n', out.nuRatio_ko, D.irf8Nu.rel);
     fprintf('  Irf8-/- graft load ratio       : %.3f (measured %.3f +- %.3f)\n', out.ratio, D.irf8Load.rel, D.irf8Load.relErr);
@@ -210,6 +229,11 @@ end
 
 function R = lesionRatio(Q0les, perPercent, chi_s, m_seed)
 L = p210_lesion('baseline', Q0les, perPercent, chi_s, m_seed);
+R = L.nuWin(end) / L.nuWin(1);
+end
+
+function R = lesionRatioKO(Q0les, perPercent, chi_s, m_seed, fchiLes)
+L = p210_lesion('irf8ko', Q0les, perPercent, chi_s, m_seed, fchiLes);
 R = L.nuWin(end) / L.nuWin(1);
 end
 

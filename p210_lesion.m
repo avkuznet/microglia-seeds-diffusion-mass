@@ -1,4 +1,4 @@
-function L = p210_lesion(variant, Q0les, perPercent, chi_s, m_seed)
+function L = p210_lesion(variant, Q0les, perPercent, chi_s, m_seed, fchiLes)
 %P210_LESION  Focal laser-lesion geometry used to calibrate carrier motion.
 %
 %   L = P210_LESION('baseline')  or  P210_LESION('irf8ko')
@@ -12,6 +12,16 @@ function L = p210_lesion(variant, Q0les, perPercent, chi_s, m_seed)
 %     L.AbWinRel   amyloid in the window relative to its value at t = 0
 %     L.respFrac   fraction of cells displaced toward the lesion, by distance bin
 %     L.binEdges   distance bins used, um
+%
+%   THE Irf8-/- LESION RUN is set from the lesion data themselves (Fig. 3e),
+%   not from the grafts.  The window held 11.00 microglia at t = 0 in
+%   Irf8-/- animals against 13.33 in Irf8+/+, so the cortical density is
+%   0.825 of control, not the 0.133 measured inside grafts; and their number
+%   rose only 1.18-fold in 24 h against 1.82-fold, so the chemotactic
+%   response is multiplied by p.fchiLes, fitted to that rise.  The amyloid
+%   delivered to the window is then the prediction.  Up to v1.0.10 this run
+%   used the graft density ratio 0.133 with an unchanged response, which gave
+%   a relative microglial rise of 2.04 where 1.18 was measured.
 
 if nargin < 1 || isempty(variant), variant = 'baseline'; end
 
@@ -24,6 +34,12 @@ if nargin > 2 && ~isempty(perPercent), p.perPercent = perPercent; end
 % and one from a warm file give different answers.
 if nargin > 3 && ~isempty(chi_s),  p.chi_s  = chi_s;  end
 if nargin > 4 && ~isempty(m_seed), p.m_seed = m_seed; end
+if nargin > 5 && ~isempty(fchiLes), p.fchiLes = fchiLes; end
+D = p210_data();
+if strcmpi(variant, 'irf8ko')
+    p.nu0   = D.lesNu.ko0Rel;          % MEASURED  0.825, Fig. 3e at t = 0
+    p.chi_s = p.fchiLes * p.chi_s;     % FITTED    to the 1.18-fold rise
+end
 p.geom    = 1;            % cylindrical: a lesion imaged in a cortical plane
 p.Rg      = 0;            % no graft
 p.Rout    = 0.30;         % mm
@@ -41,7 +57,6 @@ p.Q0      = p.Q0les;      % 1/day, FITTED to the microglial accumulation
 % its relative increment over 24 h (Fig. 3c with Fig. 3d).  A lesion is
 % aimed at a site, not at the tissue mean, and starting the window at the
 % mean is what previously made the delivered cargo invisible against it.
-D = p210_data();
 Rw = 0.0846;                                % equivalent radius of the window
 p.F_h_pct    = 3.5;                         % surrounding cortex, % of area
 p.F_hole_pct = D.lesWin0Pct;                % the window at t = 0, % of area
