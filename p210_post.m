@@ -40,31 +40,19 @@ d.graftTot = zeros(nt,1); d.nuGraftVol = zeros(nt,1);
 %   this model - area proportional to the deposit mass, gated by a hard
 %   threshold on it, with the deposit number never entering - so that the
 %   two can be compared on the same solution.
-meanfield = isfield(p,'readout') && strcmpi(p.readout,'meanfield');
-
+%
+%   Three further switches, all off by default, are used by p210_readouts to
+%   show how far the results depend on this rule (see obsArea below):
+%     p.readout = 'section'   the section formula with thickness p.sectT, of
+%                             which Eq. (14) is the thick-section limit and
+%                             area proportional to mass the thin-section one
+%     p.visExp                exponent of the visibility factor (3 in the paper)
+%     p.cargoRead             1 or 2: intracellular cargo is read as well
 d.areaPct = zeros(nt,G.N);
 for k = 1:nt
     F = sol.F(k,:)';
     c = max(sol.c(k,:)', p.c_min);
-    if meanfield
-        a = F / p.perPercent;
-        a(F <= p.F_thr) = 0;
-        d.areaPct(k,:) = a';
-        if Vg > 0
-            d.loadPct(k)    = sum(G.Vc(gi) .* a(gi)) / Vg;
-            d.graftTot(k)   = sum(G.Vc(gi) .* F(gi));
-            d.nuGraftVol(k) = sum(G.Vc(gi) .* sol.nu(k,gi)') / Vg * p.n0_3D;
-        end
-        d.hostPct(k) = sum(G.Vc(hi) .* a(hi)) / Vh;
-        continue
-    end
-    mbar = max(F ./ c, realmin);                     % mass per deposit
-    % Visibility rises smoothly with deposit size rather than switching on
-    % at a threshold: half the deposits of mass p.detRatio*p.m_seed are
-    % called plaques.  A hard cut would put a variant on one side or the
-    % other of a cliff and decide the answer by itself.
-    vis = 1 ./ (1 + (p.detRatio * p.m_seed ./ mbar).^3);
-    a = p.kap * c.^(1/3) .* F.^(2/3) .* vis;
+    a = obsArea(p, F, c, sol.b(k,:)', sol.nu(k,:)');
     d.areaPct(k,:) = a';
     if Vg > 0
         d.loadPct(k)    = sum(G.Vc(gi) .* a(gi)) / Vg;
@@ -99,12 +87,9 @@ d.depth  = p.Rg - G.rc(gi);
 idx = find(gi);
 d.onsetT = nan(numel(idx),1);
 Fd = max(dn.Fg, 0);  cd = max(dn.cg, p.c_min);
-if meanfield
-    ad = Fd / p.perPercent;
-    ad(Fd <= p.F_thr) = 0;
-else
-    ad = p.kap * cd.^(1/3) .* Fd.^(2/3) ./ (1 + (p.detRatio * p.m_seed ./ max(Fd ./ cd, realmin)).^3);
-end
+%   The fine time grid keeps F and c only, so the onset is that of the
+%   deposits; cargo, if it is read at all (p.cargoRead), is left out here.
+ad = obsArea(p, Fd, cd, [], []);
 for j = 1:numel(idx)
     % onset is the first time the deposit at this radius is resolvable and
     % covers more than p.aThr of the area
@@ -133,5 +118,60 @@ if Vg > 0
     d.Lambda = d.ell_x / mean(d.ell_m(gi));
 else
     d.Lambda = d.ell_x / mean(d.ell_m);
+end
+end
+
+% -------------------------------------------------------------------------
+function a = obsArea(p, F, c, b, nu)
+%OBSAREA  Stained area, % of section, from the deposit mass F and number c.
+%
+%   'discrete'   Eq. (14) of the paper: kap * c^(1/3) * F^(2/3) * vis.
+%   'section'    c deposits per unit volume, each a sphere of diameter d,
+%                projected through a section of thickness T:
+%                    area fraction = c * (pi/4) d^2 * (T + 2d/3) * vis
+%                The first term counts the spheres whose centre lies in the
+%                section and the second the caps of those cut by its faces.
+%                For d << T it is Eq. (14); for T = 0 it is the volume
+%                fraction, proportional to mass, which is what a true planar
+%                section measures.  d follows from the deposit mass as
+%                d_ref * (mass / mu_ref)^(1/3), with d_ref fixed by the
+%                reference host in p210_derive, so nothing new is assumed.
+%   'meanfield'  area proportional to mass, hard threshold, no deposit
+%                number: the operator of the first version of this model.
+%
+%   b and nu, when given and p.cargoRead > 0, add the intracellular cargo as
+%   one object per cell: through the same visibility rule (1) or all of it (2).
+ro = 'discrete';  if isfield(p,'readout'), ro = lower(p.readout); end
+if strcmp(ro, 'meanfield')
+    a = F / p.perPercent;
+    a(F <= p.F_thr) = 0;
+    return
+end
+ne = 3;  if isfield(p,'visExp'), ne = p.visExp; end
+mbar = max(F ./ c, realmin);                     % mass per deposit
+% Visibility rises smoothly with deposit size rather than switching on at a
+% threshold: half the deposits of mass p.detRatio*p.m_seed are called
+% plaques.  A hard cut would put a variant on one side or the other of a
+% cliff and decide the answer by itself.
+vis = 1 ./ (1 + (p.detRatio * p.m_seed ./ mbar).^ne);
+switch ro
+    case 'discrete'
+        a = p.kap * c.^(1/3) .* F.^(2/3) .* vis;
+    case 'section'
+        dd = p.d_ref * (mbar / p.mu_ref).^(1/3);           % diameter, mm
+        a  = 100 * c .* (pi/4) .* dd.^2 .* (p.sectT + 2*dd/3) .* vis;
+        a(F <= 0) = 0;
+    otherwise
+        error('p210_post:readout', 'unknown readout ''%s''', ro);
+end
+if isfield(p,'cargoRead') && p.cargoRead > 0 && ~isempty(b)
+    n  = max(nu * p.n0_3D, realmin);  b = max(b, 0);       % cells per mm^3
+    mb = max(b ./ n, realmin);                             % cargo per cell
+    if p.cargoRead == 1
+        vb = 1 ./ (1 + (p.detRatio * p.m_seed ./ mb).^ne);
+    else
+        vb = 1;
+    end
+    a = a + p.kap * n.^(1/3) .* b.^(2/3) .* vb;
 end
 end

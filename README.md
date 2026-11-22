@@ -1,7 +1,7 @@
-# P210 — microglial carrier–diffusion model of Aβ propagation into naive tissue
+# P210 — microglial carrier–diffusion model of Aβ propagation into neural grafts
 
-MATLAB implementation for *"Microglia deliver the seeds and diffusion delivers most of the mass:
-a transport model of amyloid-β propagation into naive brain tissue."*
+MATLAB implementation for *"Microglial seeding and diffusive mass supply in a model of
+amyloid-β propagation into neural grafts."*
 
 Base MATLAB only, no toolboxes; developed and run on R2026a. MIT licence.
 
@@ -11,6 +11,10 @@ Base MATLAB only, no toolboxes; developed and run on R2026a. MIT licence.
 p210_calibrate      % fit the six constants, writes p210_fitted.mat   (~4 min)
 run_all             % print every number quoted in the paper          (~30 s)
 make_figures        % write Figs 1-8 and S1-S3 to ../figures           (~60 s)
+p210_assumed        % Table S1: assumed inputs halved and doubled
+p210_irf8           % Table S2: Irf8-/- with host and graft constrained separately (~6 min)
+p210_readouts       % Table S3: the observation rule                  (~25 min)
+p210_lesioncases    % Table S4: lesion runs with genotype-specific baselines (~30 s)
 ```
 
 `run_all('quick')` skips calibration and uses the stored fit in `p210_fitted.mat`.
@@ -43,18 +47,21 @@ spurious extrema at the migration front.
 |---|---|
 | `p210_params.m` | parameter sets: `'baseline'`, `'irf8ko'`, `'depleted'`, `'aged'`, `'cx3cr1ko'`, `'nocarrier'` |
 | `p210_grid.m` | finite-volume grid (planar, cylindrical or spherical) and Jacobian sparsity |
-| `p210_rhs.m` | right-hand side: diffusion, chemotaxis, uptake, release, deposition |
+| `p210_rhs.m` | right-hand side: diffusion, chemotaxis, uptake, release, deposition; `p.cargoWithCells = 1` removes the cargo of the cells that the logistic term removes (a check, off by default) |
 | `p210_solve.m` | method-of-lines driver around `ode15s`; also integrates the fluxes across the graft boundary over the solver's own time steps and keeps the graft deposit fields on a fine time grid, so that the mass budget and the onset times do not depend on the output times asked for |
-| `p210_post.m` | observation operator and diagnostics: loads, densities, onset times, mass budget, length scales |
+| `p210_post.m` | observation operator and diagnostics: loads, densities, onset times, mass budget, length scales. The operator of the paper, Eq. (14), is the default; `p.readout = 'section'` selects the section formula with thickness `p.sectT`, `p.visExp` the steepness of the visibility factor, and `p.cargoRead` whether intracellular cargo is read as stained area |
 | `p210_scales.m` | transport length scales `ell_m`, `ell_x` and `Lambda` on their own fine time grid; the peak chemotactic drift occurs in the first few days and is understated by a factor of two if read off the published output times |
 | `p210_ratiostats.m` | compares a model ratio with a measured one three ways: ratio of means with Gaussian errors, log scale, and bootstrap. Graft loads are strongly right-skewed, so the first misrepresents them and the log scale is the one quoted |
-| `p210_derive.m` | quantities that follow from the declared ones (`kap`, `F_h`, `c_h`, `m_c`) |
-| `p210_lesion.m` | focal laser-lesion geometry; the Irf8⁻ᐟ⁻ run is set from the lesion data (window count 0.825 of control, chemotactic response reduced by `fchiLes`) |
+| `p210_derive.m` | quantities that follow from the declared ones (`kap`, `F_h`, `c_h`, `m_c`, and the reference deposit diameter `d_ref` of the section formula) |
+| `p210_lesion.m` | focal laser-lesion geometry; the Irf8⁻ᐟ⁻ run is set from the lesion data (window count 0.825 of control, chemotactic response reduced by `fchiLes`); an optional last argument changes the window baseline, the surrounding load, motility and cargo handling for `p210_lesioncases` |
 | `p210_calibrate.m` | fits the six free constants to six published targets, and `fchiLes` for the Irf8⁻ᐟ⁻ lesion run |
 | `p210_data.m` | measurements from the Source Data files of d'Errico et al. (2022) |
 | `run_all.m` | reproduces every number quoted in the paper |
 | `make_figures.m` | Figs 1–8 and S1–S3 |
-| `p210_competition.m` | the two observation operators recalibrated and compared |
+| `p210_lesioncases.m` | the laser-lesion comparison with genotype-specific baselines (Table S4): the Irf8⁻ᐟ⁻ run with its own window baseline, reduced cargo per cell, reduced motility and a lower surrounding load; the Irf8⁺ᐟ⁺ run with its baseline halved and doubled |
+| `p210_irf8.m` | Irf8⁻ᐟ⁻ recipients with host and graft constrained separately (Table S2): host density 0.133, 0.355, 0.825 or 1.0; the low graft density produced by a reduced graft capacity, with or without weak chemotaxis, or by reduced motility; the cargo of removed cells staying or leaving; cargo per cell at the measured 0.663. Nothing is fitted to the graft load |
+| `p210_readouts.m` | how far the results depend on the observation rule (Table S3): Eq. (14), the section formula at 25 µm, the planar limit, shallower and steeper visibility curves, and intracellular cargo read as stained area, each refitted to the same three targets (`k_a`, `perPercent`, `m_seed`) |
+| `p210_competition.m` | the earlier two-operator comparison (Eq. (14) against area proportional to mass with a hard threshold), in which `m_seed` is not refitted; not an equally calibrated comparison, superseded by `p210_readouts.m` and kept for the record |
 | `p210_assumed.m` | each assumed input halved and doubled, one at a time: graft load, Irf8⁻ᐟ⁻ ratio and carrier share (Table S1), with two checks against published measurements |
 | `p210_diag.m` | scratch diagnostic for the monomer balance |
 | `smoke.m` | smoke test: solves the baseline case on a coarse time grid and prints loads, densities, carrier fraction and field minima |
@@ -133,13 +140,17 @@ area  =  kap * c^(1/3) * F^(2/3) * vis(F/c)
 
 — `c` deposits each of mass `F/c`, each showing an area proportional to its mass to the
 two-thirds, each visible once it has grown past about ten times the seed it started
-from. The mass-proportional operator of the first version is the special case in which
-the deposit number is pinned at the host value; `p.readout = 'meanfield'` restores it,
-and `p210_competition` recalibrates both and compares them.
+from. This rule is the limit, for deposits much thinner than the section, of the
+projected area of spheres in a section of finite thickness; the planar-section limit is
+area proportional to mass. `p210_readouts` refits the same three targets under each of
+these rules and prints what the model then gives (Table S3 of the paper). The depletion
+ratios do not select between the rules: the mass-proportional rule gives 0.206 and 0.208
+for BLZ945 and Irf8⁻ᐟ⁻, within one standard error of the measurements. The rules differ
+mainly in the host load and the late-time graft load.
 
-This is where the reviewers' request for sub-voxel competition belongs. The deposit
-number is what a depleted graft is short of, and leaving it out of the readout makes
-the load respond to the carrier count far more steeply than it does.
+`p210_competition` is the earlier two-operator comparison. It refits `k_a` and
+`perPercent` but not `m_seed`, and its two operators detect a deposit differently, so it
+is not an equally calibrated comparison; it is kept for the record only.
 
 ## Headline numbers
 
@@ -184,6 +195,14 @@ the load respond to the carrier count far more steeply than it does.
 
 ## Known limitations of this implementation
 
+- **The lesion genotype ratio holds only under equal baselines.** The runs of the paper
+  start the counting window of both genotypes at 0.073% of area, and the ratio of 24-h
+  fold changes is then 1.70 against a measured 1.46. Fig. 3c,d imply 0.007% for
+  Irf8⁻ᐟ⁻. With that baseline the Irf8⁻ᐟ⁻ fold change is 15.4 (measured 6.45 ± 6.24)
+  and the ratio reverses to 0.32; the ratio of absolute 24-h amounts is 2.5 against a
+  measured 15.0. Reduced cargo per cell and reduced motility bring the ratio of amounts
+  to 8–9 and the fold change to 5.0–5.6. Halving the Irf8⁺ᐟ⁺ baseline alone raises its
+  fold change from 4.9 to 8.4, so fold changes test little here (`p210_lesioncases`).
 - **The lesion runs are matched at 24 h only.** The microglial accumulation at 24 h is
   fitted in both genotypes. At 6 h the modelled microglia have risen 1.70-fold against a
   measured 1.15 (Irf8⁺ᐟ⁺) and 1.15-fold against 0.75 (Irf8⁻ᐟ⁻), and the Irf8⁻ᐟ⁻ window
@@ -199,6 +218,35 @@ the load respond to the carrier count far more steeply than it does.
   the 1 s.e.m. interval) gives 0.273 at unchanged carrier density, with the host load
   11% lower, against 6% higher at `phi` = 0. Enhanced uptake alone (`phi` = 2) raises
   the graft load to 1.29.
+- **The Irf8⁻ᐟ⁻ graft load depends on how the knockout is represented.** The paper's run
+  applies the density measured in the graft, 0.133 of control, to host and graft alike
+  and gives 0.258 (measured 0.244 ± 0.061). The source gives no cortical density, but
+  the lesion window held 0.825 of the control count and each cortical plaque 0.355 of
+  the control number of microglia. `p210_irf8` holds the graft density at 4 weeks at
+  0.133 and varies the rest: the load ratio then ranges from 0.05 to 1.0, because the
+  load follows the cargo carried into the graft and not the cells present at 4 weeks.
+  A motility defect alone (about 0.05) and a reduced graft capacity alone (0.57 to 1.0)
+  are excluded by the measurement; the uniform reduction and a host density of 0.355
+  with reduced capacity and weak chemotaxis (0.25 to 0.29) are within one standard
+  error of it.
+- **Cells that the logistic term removes leave their cargo behind.** With
+  `p.cargoWithCells = 1` the cargo goes with them: the 4-week control load falls from
+  0.586% to 0.499% before refitting, and after refitting the carrier share is 11.0% and
+  18.4% at 4 and 16 weeks. The baseline depends modestly on this choice; the Irf8⁻ᐟ⁻
+  cases with a host denser than the graft depend on it strongly.
+- **The observation rule is an approximation, and two results depend on it.** Eq. (14) is
+  the limit, for deposits much thinner than the section, of the projected area of
+  spheres in a section of thickness T: area fraction = c (π/4) d² (T + 2d/3). With the
+  true thickness of 25 µm the geometry gives deposits of about 10 µm in the host at
+  transplantation and 28 µm at 4 weeks, and 16 µm in the graft at 4 weeks and 32 µm at
+  16 weeks, so Eq. (14) loses accuracy late. `p210_readouts` refits the same three
+  targets under seven rules. The carrier share of net delivery (10–13% by 4 weeks,
+  15–16% by 16 weeks), the absence of detectable deposition with inert carriers, and
+  the equality of the Irf8⁻ᐟ⁻ and BLZ945 ratios hold under all of them. The aged ratio
+  (0.01 to 1.7) and the 16-week graft load (1.8% to 4.7%, measured 1.92 ± 0.52%) do
+  not. The planar limit, area proportional to mass, cannot reach the BLZ945 ratio; its
+  closest value, 0.206, is still within one standard error of the measurement, so the
+  depletion data do not select a rule.
 - The host load is not measured in the source experiment, and cross-laboratory
   percentage-area comparisons are not reliable: Bader et al. (2023) give 0.08% at
   3 months for 5xFAD Aβ1-x, Grathwohl et al. (2009) about 2% for APPPS1 at 3–4 months,

@@ -20,8 +20,22 @@ function p = p210_derive(p)
 %   everything else, so that factor enters kap too; otherwise the host would
 %   not read back the area it was declared to have.
 p.F_hRef = p.F_hRef_pct * p.perPercent;
-visRef   = 1 / (1 + (p.detRatio * p.m_seed / (p.F_hRef / p.c_hRef))^3);
+ne = 3;  if isfield(p,'visExp'), ne = p.visExp; end
+visRef   = 1 / (1 + (p.detRatio * p.m_seed / (p.F_hRef / p.c_hRef))^ne);
 p.kap    = p.F_hRef_pct / (p.c_hRef^(1/3) * p.F_hRef^(2/3) * visRef);
+
+if isfield(p,'readout') && strcmpi(p.readout,'section')
+    % The section formula of p210_post needs the deposit diameter.  It is
+    % fixed by the same condition as kap: the reference host, p.c_hRef
+    % deposits per mm^3, must read back its declared area through a section
+    % of thickness p.sectT,
+    %     c (pi/4) d^2 (T + 2d/3) vis = area fraction,
+    % which gives the diameter d_ref of a deposit of mass mu_ref.
+    p.mu_ref = p.F_hRef / p.c_hRef;
+    g   = @(dd) 100 * p.c_hRef * (pi/4) * dd^2 * (p.sectT + 2*dd/3) * visRef - p.F_hRef_pct;
+    hiB = 1;  while g(hiB) < 0, hiB = 10 * hiB; end
+    p.d_ref = fzero(g, [1e-9 hiB]);                        % mm
+end
 
 rh      = p.F_h_pct / p.F_hRef_pct;
 p.F_h   = p.F_hRef * rh;

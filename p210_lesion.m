@@ -1,4 +1,4 @@
-function L = p210_lesion(variant, Q0les, perPercent, chi_s, m_seed, fchiLes)
+function L = p210_lesion(variant, Q0les, perPercent, chi_s, m_seed, fchiLes, opt)
 %P210_LESION  Focal laser-lesion geometry used to calibrate carrier motion.
 %
 %   L = P210_LESION('baseline')  or  P210_LESION('irf8ko')
@@ -23,7 +23,19 @@ function L = p210_lesion(variant, Q0les, perPercent, chi_s, m_seed, fchiLes)
 %   used the graft density ratio 0.133 with an unchanged response, which gave
 %   a relative microglial rise of 2.04 where 1.18 was measured.
 
+%
+%   L = P210_LESION(variant, [], [], [], [], fchiLes, opt) changes what the
+%   paper's runs assume, for the checks of p210_lesioncases.  Fields of opt:
+%     winPct    deposit in the counting window at t = 0, % of area
+%               (default D.lesWin0Pct, the Irf8+/+ value, in both genotypes)
+%     surPct    deposit load of the surrounding cortex, % of area (3.5)
+%     fDn       multiplier on the random motility D_n (1)
+%     kuFac     uptake k_u and phi divided by this factor (1)
+%     kdFac     degradation k_d multiplied by this factor (1)
+%     krFac     release k_r multiplied by this factor (1)
+
 if nargin < 1 || isempty(variant), variant = 'baseline'; end
+if nargin < 7 || isempty(opt), opt = struct(); end
 
 p = p210_params(variant);
 if nargin > 1 && ~isempty(Q0les), p.Q0les = Q0les; end
@@ -40,6 +52,10 @@ if strcmpi(variant, 'irf8ko')
     p.nu0   = D.lesNu.ko0Rel;          % MEASURED  0.825, Fig. 3e at t = 0
     p.chi_s = p.fchiLes * p.chi_s;     % FITTED    to the 1.18-fold rise
 end
+if isfield(opt,'fDn'),   p.D_n = opt.fDn * p.D_n; end
+if isfield(opt,'kuFac'), p.k_u = p.k_u / opt.kuFac;  p.phi = p.phi / opt.kuFac; end
+if isfield(opt,'kdFac'), p.k_d = opt.kdFac * p.k_d; end
+if isfield(opt,'krFac'), p.k_r = opt.krFac * p.k_r; end
 p.geom    = 1;            % cylindrical: a lesion imaged in a cortical plane
 p.Rg      = 0;            % no graft
 p.Rout    = 0.30;         % mm
@@ -60,6 +76,8 @@ p.Q0      = p.Q0les;      % 1/day, FITTED to the microglial accumulation
 Rw = 0.0846;                                % equivalent radius of the window
 p.F_h_pct    = 3.5;                         % surrounding cortex, % of area
 p.F_hole_pct = D.lesWin0Pct;                % the window at t = 0, % of area
+if isfield(opt,'surPct'), p.F_h_pct    = opt.surPct; end
+if isfield(opt,'winPct'), p.F_hole_pct = opt.winPct; end
 p            = p210_derive(p);   % F_h, F_hole, c_h, c_hole, kap, m_c
 p.F_hole_r   = Rw;
 
@@ -78,6 +96,9 @@ for k = 1:numel(sol.t)
     L.AbWin(k) = sum(G.Vc(win) .* (sol.b(k,win)' + sol.F(k,win)')) / Vw;
 end
 L.AbWinRel = L.AbWin / L.AbWin(1);
+% cargo per cell in the surrounding cortex at t = 0, model units per unit nu
+out = G.rc > 2 * Rw;
+L.beta0 = sum(G.Vc(out) .* sol.b(1,out)') / sum(G.Vc(out) .* sol.nu(1,out)');
 
 % ---- displacement toward the lesion, binned as in the source paper ------
 L.binEdges = [0 30 60 90 120];              % um

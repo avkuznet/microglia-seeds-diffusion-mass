@@ -75,7 +75,16 @@ db  = Ldb + U_m + U_F - (p.k_d + p.k_r) * b;
 % measured graft density settles at 0.65 of the homeostatic cortical value
 % while the acute injury transiently drives it above that.  A single
 % capacity for both compartments can only rise monotonically to it.
-dnu = Ldn + p.g_n * nu .* (1 - nu ./ G.nu0f) - p.del_n * nu;
+logi = p.g_n * nu .* (1 - nu ./ G.nu0f);
+dnu = Ldn + logi - p.del_n * nu;
+% Where the density is above the local capacity the logistic term removes
+% cells.  By default their cargo stays in the tissue, carried by the cells
+% that remain.  With p.cargoWithCells = 1 it leaves with them instead, as it
+% would if those cells emigrated or were cleared with their contents; this
+% is a sink of amyloid and is used only as a check (p210_irf8).
+if isfield(p,'cargoWithCells') && p.cargoWithCells
+    db = db + min(logi, 0) .* beta;
+end
 ds  = Ls + Q - p.lam_s * s;
 
 % ---- number density of deposits -----------------------------------------

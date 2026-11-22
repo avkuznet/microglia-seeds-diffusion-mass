@@ -55,8 +55,10 @@ p.S_c   = Inf;         % sub-voxel competition scale, model units of surface.
                        % measured clearance rate.  Declared, not fitted,
                        % and not swept in any published figure; the paper
                        % discusses it in the limitations section as a
-                       % model-structure sensitivity, and p210_competition
-                       % is where the alternative closure is exercised.
+                       % model-structure sensitivity.  No routine of this
+                       % package exercises the alternative closure:
+                       % p210_readouts and p210_competition compare
+                       % observation rules, not this kinetic alternative.
                        % S_c = Inf is the mean-field closure of the first
                        % version of this model.
 
@@ -110,8 +112,8 @@ p.F_h_pct = 0.20;      % host load at transplantation, % of area.  9-10 week
                        % are declared as areas and converted with perPercent,
                        % so that no deposit is specified in model units alone.
 p.F_h   = 100;         % host load in model units (set from F_h_pct below)
-p.F_thr = 25;          % mean-field detection threshold, retained for the
-                       % mean-field comparison in p210_competition
+p.F_thr = 25;          % mean-field detection threshold, used only by the
+                       % superseded comparison in p210_competition
 p.aThr  = 0.05;        % smallest load called detectable, % of area
 p.k_c   = 0;           % extra non-phagocytic deposit clearance (phagocytosis is explicit)
 
@@ -129,6 +131,8 @@ p.fnu_graft = 0.35;    % FITTED  microglial carrying capacity of the graft,
                        % from the 4-week graft density (Fig. 1d).  The graft
                        % is embryonic tissue and supports fewer microglia.
 p.del_n  = 0.0;        % 1/day death (TUNEL-negative: set to zero)
+p.cargoWithCells = 0;  % 1: cargo of the cells that the logistic term removes
+                       % leaves with them (a check; see p210_rhs, p210_irf8)
 p.k_u    = 0.10;       % uptake of soluble Abeta, 1/day per nu
 p.k_p    = 0.040;      % phagocytosis of deposit surface, 1/day per nu per S
 p.b_max  = 30;         % cargo capacity per unit nu
@@ -164,6 +168,16 @@ p.tau_s = 7.0;         % day, decay of the injection-injury source
 
 % ---- observation --------------------------------------------------------
 p.sect  = 0.025;       % histological section thickness, mm
+p.readout = 'discrete';% observation rule of p210_post: 'discrete' is Eq. (14);
+                       % 'section' is the section formula with thickness
+                       % p.sectT, of which Eq. (14) is the thick-section
+                       % limit; 'meanfield' is area proportional to mass
+                       % with a hard threshold.  See p210_readouts.
+p.sectT = p.sect;      % section thickness used by the 'section' rule, mm
+p.visExp = 3;          % DECLARED  exponent of the visibility factor
+p.cargoRead = 0;       % intracellular cargo in the stained area: 0 not read
+                       % (the paper), 1 read through the same visibility
+                       % rule, 2 all of it read.  See p210_readouts.
 p.n0_3D = 3.2e4;       % homeostatic microglial density, cells/mm^3
 
 % ---- fitted values, if a calibration has been run -----------------------
